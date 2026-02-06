@@ -14,7 +14,8 @@
       "Bash(npm run dev:frontend:*)",
       "Bash(npm run dev:backend:*)",
       "Bash(npm install:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }
