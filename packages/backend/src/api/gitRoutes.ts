@@ -107,4 +107,24 @@ router.get('/log', async (_req, res) => {
   }
 });
 
+// POST /api/git/push
+router.post('/push', async (_req, res) => {
+  try {
+    const result = await git('push');
+    res.json({ ok: true, result });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/git/pull
+router.post('/pull', async (_req, res) => {
+  try {
+    const result = await git('pull');
+    res.json({ ok: true, result });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;
