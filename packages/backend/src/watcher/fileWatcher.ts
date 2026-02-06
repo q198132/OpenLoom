@@ -7,6 +7,12 @@ import type { ControlMessage } from '@claudegui/shared';
 // 文件快照缓存（用于 Diff Review）
 const snapshotCache = new Map<string, string>();
 
+// 检查相对路径是否属于被忽略的目录
+function isIgnoredPath(rel: string): boolean {
+  const parts = rel.split('/');
+  return parts.some((p) => IGNORED_DIRS.includes(p));
+}
+
 export function startFileWatcher(
   rootDir: string,
   broadcast: (msg: ControlMessage) => void,

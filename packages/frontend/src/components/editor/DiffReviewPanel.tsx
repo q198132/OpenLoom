@@ -56,6 +56,13 @@ export default function DiffReviewPanel() {
           modified={activeReview.newContent}
           language={language}
           theme={theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte'}
+          onMount={(_editor, monaco) => {
+            monaco.editor.defineTheme('catppuccin-mocha', catppuccinMocha);
+            monaco.editor.defineTheme('catppuccin-latte', catppuccinLatte);
+            monaco.editor.setTheme(
+              theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte',
+            );
+          }}
           options={{
             fontFamily: "'JetBrains Mono', monospace",
             fontSize: 14,
