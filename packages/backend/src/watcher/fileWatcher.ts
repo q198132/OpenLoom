@@ -28,6 +28,7 @@ export function startFileWatcher(
 
   watcher.on('change', async (filePath) => {
     const rel = path.relative(rootDir, filePath).replace(/\\/g, '/');
+    if (isIgnoredPath(rel)) return;
     const oldContent = snapshotCache.get(rel) ?? '';
 
     try {
@@ -53,6 +54,7 @@ export function startFileWatcher(
 
   watcher.on('add', async (filePath) => {
     const rel = path.relative(rootDir, filePath).replace(/\\/g, '/');
+    if (isIgnoredPath(rel)) return;
     try {
       const content = await fs.readFile(filePath, 'utf-8');
       snapshotCache.set(rel, content);
@@ -63,17 +65,20 @@ export function startFileWatcher(
 
   watcher.on('unlink', (filePath) => {
     const rel = path.relative(rootDir, filePath).replace(/\\/g, '/');
+    if (isIgnoredPath(rel)) return;
     snapshotCache.delete(rel);
     broadcast({ type: 'file-changed', event: 'unlink', path: rel });
   });
 
   watcher.on('addDir', (filePath) => {
     const rel = path.relative(rootDir, filePath).replace(/\\/g, '/');
+    if (isIgnoredPath(rel)) return;
     broadcast({ type: 'file-changed', event: 'addDir', path: rel });
   });
 
   watcher.on('unlinkDir', (filePath) => {
     const rel = path.relative(rootDir, filePath).replace(/\\/g, '/');
+    if (isIgnoredPath(rel)) return;
     broadcast({ type: 'file-changed', event: 'unlinkDir', path: rel });
   });
 

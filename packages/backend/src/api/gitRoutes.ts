@@ -181,4 +181,36 @@ router.post('/pull', async (_req, res) => {
   }
 });
 
+// GET /api/git/working-diff?file=xxx&staged=true|false — 获取工作区文件的 diff 内容
+router.get('/working-diff', async (req, res) => {
+  try {
+    const file = req.query.file as string;
+    const staged = req.query.staged === 'true';
+    if (!file) return res.status(400).json({ error: 'file required' });
+
+    let oldContent = '';
+    let newContent = '';
+
+    if (staged) {
+      // 暂存区 vs HEAD：old = HEAD版本, new = 暂存区版本
+      try { oldContent = await git('show', `HEAD:${file}`); } catch { /* 新文件 */ }
+      try { newContent = await git('show', `:${file}`); } catch { /* 删除的文件 */ }
+    } else {
+      // 工作区 vs 暂存区(或HEAD)：old = 暂存区版本, new = 工作区版本
+      try { oldContent = await git('show', `:${file}`); } catch {
+        try { oldContent = await git('show', `HEAD:${file}`); } catch { /* 新文件 */ }
+      }
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      try {
+        newContent = await fs.readFile(path.join(cwd, file), 'utf-8');
+      } catch { /* 删除的文件 */ }
+    }
+
+    res.json({ oldContent, newContent, file });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;
