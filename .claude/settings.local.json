@@ -17,7 +17,11 @@
       "Bash(npx:*)",
       "Bash(npm run dev:*)",
       "Bash(netstat:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd /c \"taskkill /PID 26524 /F\")",
+      "Bash(powershell -Command:*)",
+      "Bash(curl:*)"
     ]
   }
 }
