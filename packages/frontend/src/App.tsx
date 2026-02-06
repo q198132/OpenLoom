@@ -7,6 +7,12 @@ import type { ControlMessage } from '@claudegui/shared';
 
 export default function App() {
   const addReview = useDiffReviewStore((s) => s.addReview);
+  const theme = useLayoutStore((s) => s.theme);
+
+  // 同步主题到 DOM
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const onControlMessage = useCallback(
     (msg: ControlMessage) => {

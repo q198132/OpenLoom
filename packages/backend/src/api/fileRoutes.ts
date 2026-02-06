@@ -6,8 +6,8 @@ import type { FileNode } from '@claudegui/shared';
 
 const router = Router();
 
-// 项目根目录（启动时的 cwd）
-const rootDir = process.cwd();
+// 项目根目录（通过环境变量或命令行参数指定）
+const rootDir = process.env.PROJECT_ROOT || process.cwd();
 
 // 路径安全校验
 function isPathSafe(targetPath: string): boolean {
