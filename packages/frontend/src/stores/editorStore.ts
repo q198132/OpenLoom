@@ -34,6 +34,7 @@ interface EditorState {
   updateContent: (path: string, content: string) => void;
   getContent: (path: string) => string | undefined;
   openCommitDiff: (hash: string, shortHash: string, file: string) => Promise<void>;
+  openWorkingDiff: (file: string, staged: boolean) => Promise<void>;
   closeCommitDiff: () => void;
 }
 
@@ -110,6 +111,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       commitDiff: {
         hash, shortHash, file,
+        oldContent: data.oldContent || '',
+        newContent: data.newContent || '',
+        language: getLanguage(file),
+      },
+    });
+  },
+
+  openWorkingDiff: async (file, staged) => {
+    const res = await fetch(
+      `/api/git/working-diff?file=${encodeURIComponent(file)}&staged=${staged}`,
+    );
+    const data = await res.json();
+    if (data.error) return;
+    set({
+      commitDiff: {
+        hash: staged ? 'staged' : 'working',
+        shortHash: staged ? '暂存区' : '工作区',
+        file,
         oldContent: data.oldContent || '',
         newContent: data.newContent || '',
         language: getLanguage(file),

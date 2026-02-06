@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Minus, ChevronRight, ChevronDown } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
+import { useEditorStore } from '@/stores/editorStore';
 
 const STATUS_COLORS: Record<string, string> = {
   modified: 'text-yellow',
@@ -33,6 +34,7 @@ export default function GitFileList() {
           files={staged}
           action="unstage"
           onAction={(path) => unstageFiles([path])}
+          staged
           defaultOpen
         />
       )}
@@ -43,6 +45,7 @@ export default function GitFileList() {
           files={unstaged}
           action="stage"
           onAction={(path) => stageFiles([path])}
+          staged={false}
           defaultOpen
         />
       )}
@@ -61,6 +64,7 @@ function FileSection({
   files,
   action,
   onAction,
+  staged,
   defaultOpen = true,
 }: {
   title: string;
@@ -68,6 +72,7 @@ function FileSection({
   files: { path: string; status: string }[];
   action: 'stage' | 'unstage';
   onAction: (path: string) => void;
+  staged: boolean;
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
