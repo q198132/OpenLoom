@@ -11,7 +11,7 @@ import DiffReviewPanel from './DiffReviewPanel';
 import { useDiffReviewStore } from '@/stores/diffReviewStore';
 
 export default function EditorPanel() {
-  const { tabs, activeTab, fileContents, openFile, updateContent } =
+  const { tabs, activeTab, fileContents, openFile, updateContent, commitDiff, closeCommitDiff } =
     useEditorStore();
   const theme = useLayoutStore((s) => s.theme);
   const pendingReviews = useDiffReviewStore((s) => s.pendingReviews);
@@ -71,7 +71,7 @@ export default function EditorPanel() {
     }
   }, [theme]);
 
-  if (tabs.length === 0 && !showDiff) {
+  if (tabs.length === 0 && !showDiff && !commitDiff) {
     return (
       <div className="h-full bg-base flex flex-col items-center justify-center text-overlay0 gap-3">
         <Code2 size={48} strokeWidth={1} />
@@ -86,6 +86,39 @@ export default function EditorPanel() {
       {showDiff ? (
         <div className="flex-1 overflow-hidden">
           <DiffReviewPanel />
+        </div>
+      ) : commitDiff ? (
+        <div className="flex flex-col h-full">
+          <div className="flex items-center justify-between h-9 px-3 bg-mantle border-b border-surface0 shrink-0">
+            <span className="text-xs text-subtext0">
+              {commitDiff.file}
+              <span className="text-overlay0 ml-2">
+                ({commitDiff.shortHash})
+              </span>
+            </span>
+            <button
+              onClick={closeCommitDiff}
+              className="p-1 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <DiffEditor
+              original={commitDiff.oldContent}
+              modified={commitDiff.newContent}
+              language={commitDiff.language}
+              theme={theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte'}
+              options={{
+                fontFamily: "'JetBrains Mono', monospace",
+                fontSize: 14,
+                readOnly: true,
+                renderSideBySide: true,
+                scrollBeyondLastLine: false,
+                minimap: { enabled: false },
+              }}
+            />
+          </div>
         </div>
       ) : (
         <>
