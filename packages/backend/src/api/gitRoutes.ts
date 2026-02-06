@@ -73,4 +73,22 @@ router.post('/commit', async (req, res) => {
   }
 });
 
+// GET /api/git/branches
+router.get('/branches', async (_req, res) => {
+  try {
+    const raw = await git('branch', '--no-color');
+    const lines = raw.split('\n').filter(Boolean);
+    let current = '';
+    const branches: string[] = [];
+    for (const line of lines) {
+      const name = line.replace(/^\*?\s+/, '').trim();
+      if (line.startsWith('*')) current = name;
+      branches.push(name);
+    }
+    res.json({ current, branches });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;
