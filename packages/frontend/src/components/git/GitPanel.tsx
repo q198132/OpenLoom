@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { GitBranch, RefreshCw } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import GitFileList from './GitFileList';
@@ -8,11 +8,18 @@ import GitGraph from './GitGraph';
 
 export default function GitPanel() {
   const { branch, fetchStatus, fetchBranch, fetchLog } = useGitStore();
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchStatus();
     fetchBranch();
     fetchLog();
+  }, [fetchStatus, fetchBranch, fetchLog]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([fetchStatus(), fetchBranch(), fetchLog()]);
+    setRefreshing(false);
   }, [fetchStatus, fetchBranch, fetchLog]);
 
   return (
