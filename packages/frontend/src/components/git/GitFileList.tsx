@@ -98,6 +98,7 @@ function FileSection({
             status={f.status}
             action={action}
             onAction={onAction}
+            staged={staged}
           />
         ))}
     </div>
@@ -109,11 +110,13 @@ function GitFileRow({
   status,
   action,
   onAction,
+  staged,
 }: {
   filePath: string;
   status: string;
   action: 'stage' | 'unstage';
   onAction: (path: string) => void;
+  staged: boolean;
 }) {
   // 分离文件名和目录路径（用 / 或 \ 分割）
   const parts = filePath.replace(/\\/g, '/').split('/');
@@ -124,7 +127,10 @@ function GitFileRow({
   const label = STATUS_LABELS[status] || '?';
 
   return (
-    <div className="flex items-center h-[22px] pl-6 pr-2 hover:bg-surface0 group cursor-pointer">
+    <div
+      className="flex items-center h-[22px] pl-6 pr-2 hover:bg-surface0 group cursor-pointer"
+      onClick={() => useEditorStore.getState().openWorkingDiff(filePath, staged)}
+    >
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         <FileIcon fileName={fileName} />
         <span className="truncate text-subtext1">{fileName}</span>
