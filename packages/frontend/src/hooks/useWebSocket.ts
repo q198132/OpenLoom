@@ -15,6 +15,14 @@ function ensureConnection() {
   const url = `${protocol}//${location.host}${WS_CONTROL_PATH}`;
   ws = new WebSocket(url);
 
+  ws.onopen = () => {
+    // 刷新待发送队列
+    for (const msg of pendingMessages) {
+      ws!.send(JSON.stringify(msg));
+    }
+    pendingMessages = [];
+  };
+
   ws.onmessage = (e) => {
     try {
       const msg: ControlMessage = JSON.parse(e.data);
@@ -24,7 +32,6 @@ function ensureConnection() {
 
   ws.onclose = () => {
     ws = null;
-    // 自动重连
     if (listeners.size > 0) {
       connectTimer = setTimeout(ensureConnection, 2000);
     }
@@ -32,8 +39,11 @@ function ensureConnection() {
 }
 
 export function sendControlMessage(msg: ControlMessage) {
+  ensureConnection();
   if (ws?.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(msg));
+  } else {
+    pendingMessages.push(msg);
   }
 }
 
