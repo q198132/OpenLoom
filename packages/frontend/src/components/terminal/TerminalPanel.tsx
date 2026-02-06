@@ -7,7 +7,54 @@ import { AttachAddon } from '@xterm/addon-attach';
 import '@xterm/xterm/css/xterm.css';
 import { WS_PTY_PATH } from '@claudegui/shared';
 import { useTerminalStore } from '@/stores/terminalStore';
+import { useLayoutStore } from '@/stores/layoutStore';
 import { useControlSocket } from '@/hooks/useWebSocket';
+
+const DARK_THEME = {
+  background: '#11111b',
+  foreground: '#cdd6f4',
+  cursor: '#f5e0dc',
+  selectionBackground: '#585b70',
+  black: '#45475a',
+  red: '#f38ba8',
+  green: '#a6e3a1',
+  yellow: '#f9e2af',
+  blue: '#89b4fa',
+  magenta: '#cba6f7',
+  cyan: '#94e2d5',
+  white: '#bac2de',
+  brightBlack: '#585b70',
+  brightRed: '#f38ba8',
+  brightGreen: '#a6e3a1',
+  brightYellow: '#f9e2af',
+  brightBlue: '#89b4fa',
+  brightMagenta: '#cba6f7',
+  brightCyan: '#94e2d5',
+  brightWhite: '#a6adc8',
+};
+
+const LIGHT_THEME = {
+  background: '#dce0e8',
+  foreground: '#4c4f69',
+  cursor: '#dc8a78',
+  selectionBackground: '#acb0be',
+  black: '#5c5f77',
+  red: '#d20f39',
+  green: '#40a02b',
+  yellow: '#df8e1d',
+  blue: '#1e66f5',
+  magenta: '#8839ef',
+  cyan: '#179299',
+  white: '#acb0be',
+  brightBlack: '#6c6f85',
+  brightRed: '#d20f39',
+  brightGreen: '#40a02b',
+  brightYellow: '#df8e1d',
+  brightBlue: '#1e66f5',
+  brightMagenta: '#8839ef',
+  brightCyan: '#179299',
+  brightWhite: '#bcc0cc',
+};
 
 export default function TerminalPanel() {
   const containerRef = useRef<HTMLDivElement>(null);
