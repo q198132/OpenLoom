@@ -30,11 +30,12 @@ export default function GitPanel() {
           <span>源代码管理</span>
         </div>
         <button
-          onClick={() => { fetchStatus(); fetchBranch(); }}
+          onClick={handleRefresh}
+          disabled={refreshing}
           className="p-1 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
           title="刷新"
         >
-          <RefreshCw size={13} />
+          <RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />
         </button>
       </div>
 
