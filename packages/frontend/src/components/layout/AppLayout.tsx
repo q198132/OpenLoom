@@ -1,7 +1,7 @@
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores/layoutStore';
 import TopBar from './TopBar';
-import FileTreePanel from '../filetree/FileTreePanel';
+import SidebarContainer from './SidebarContainer';
 import EditorPanel from '../editor/EditorPanel';
 import TerminalPanel from '../terminal/TerminalPanel';
 
@@ -21,7 +21,7 @@ export default function AppLayout() {
               id="sidebar"
               order={1}
             >
-              <FileTreePanel />
+              <SidebarContainer />
             </Panel>
             <PanelResizeHandle className="w-[3px]" />
           </>

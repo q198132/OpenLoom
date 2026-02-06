@@ -3,6 +3,32 @@ import { useLayoutStore } from '@/stores/layoutStore';
 import FileTreePanel from '../filetree/FileTreePanel';
 import GitPanel from '../git/GitPanel';
 
+function SidebarIcon({
+  active,
+  onClick,
+  title,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      title={title}
+      className={`p-2 rounded transition-colors ${
+        active
+          ? 'text-accent bg-surface0'
+          : 'text-overlay0 hover:text-text hover:bg-surface0/50'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function SidebarContainer() {
   const { sidebarTab, setSidebarTab } = useLayoutStore();
 
