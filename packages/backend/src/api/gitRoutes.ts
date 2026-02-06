@@ -91,4 +91,20 @@ router.get('/branches', async (_req, res) => {
   }
 });
 
+// GET /api/git/log
+router.get('/log', async (_req, res) => {
+  try {
+    const raw = await git(
+      'log', '--oneline', '--format=%H|%h|%s|%an|%ci', '-20',
+    );
+    const entries = raw.split('\n').filter(Boolean).map((line) => {
+      const [hash, shortHash, message, author, date] = line.split('|');
+      return { hash, shortHash, message, author, date };
+    });
+    res.json(entries);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;
