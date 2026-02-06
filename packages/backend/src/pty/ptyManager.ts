@@ -39,6 +39,7 @@ export class PtyManager {
 
   resize(cols: number, rows: number): void {
     try {
+      console.log(`[pty] resize: ${cols}x${rows}`);
       this.process?.resize(cols, rows);
     } catch {
       // ignore resize errors

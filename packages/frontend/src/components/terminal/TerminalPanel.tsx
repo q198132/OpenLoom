@@ -8,7 +8,7 @@ import '@xterm/xterm/css/xterm.css';
 import { WS_PTY_PATH } from '@claudegui/shared';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
-import { useControlSocket } from '@/hooks/useWebSocket';
+import { sendControlMessage } from '@/hooks/useWebSocket';
 
 const DARK_THEME = {
   background: '#11111b',
@@ -62,7 +62,6 @@ export default function TerminalPanel() {
   const fitRef = useRef<FitAddon | null>(null);
   const { connected, setConnected } = useTerminalStore();
   const theme = useLayoutStore((s) => s.theme);
-  const { send } = useControlSocket();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -80,10 +79,31 @@ export default function TerminalPanel() {
     term.loadAddon(new WebLinksAddon());
 
     term.open(containerRef.current);
-    fitAddon.fit();
 
     termRef.current = term;
     fitRef.current = fitAddon;
+
+    // 防抖 fit + resize
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    let lastCols = 0;
+    let lastRows = 0;
+
+    const doFitAndResize = () => {
+      try {
+        fitAddon.fit();
+      } catch { return; }
+      const { cols, rows } = term;
+      if (cols !== lastCols || rows !== lastRows) {
+        lastCols = cols;
+        lastRows = rows;
+        sendControlMessage({ type: 'pty-resize', cols, rows });
+      }
+    };
+
+    const debouncedFit = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(doFitAndResize, 50);
+    };
 
     // 连接 PTY WebSocket
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -95,27 +115,21 @@ export default function TerminalPanel() {
       term.loadAddon(attachAddon);
       setConnected(true);
 
-      // 发送初始 resize
-      const dims = fitAddon.proposeDimensions();
-      if (dims) {
-        send({ type: 'pty-resize', cols: dims.cols, rows: dims.rows });
-      }
+      // 延迟初始 fit，确保容器已有最终尺寸
+      requestAnimationFrame(() => {
+        doFitAndResize();
+      });
     };
 
     ws.onclose = () => setConnected(false);
     ws.onerror = () => setConnected(false);
 
-    // ResizeObserver 监听容器变化
-    const observer = new ResizeObserver(() => {
-      fitAddon.fit();
-      const dims = fitAddon.proposeDimensions();
-      if (dims) {
-        send({ type: 'pty-resize', cols: dims.cols, rows: dims.rows });
-      }
-    });
+    // ResizeObserver 监听容器变化（防抖）
+    const observer = new ResizeObserver(debouncedFit);
     observer.observe(containerRef.current);
 
     return () => {
+      clearTimeout(resizeTimer);
       observer.disconnect();
       ws.close();
       term.dispose();
