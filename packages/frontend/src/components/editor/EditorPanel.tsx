@@ -6,11 +6,16 @@ import { useEditorStore } from '@/stores/editorStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import TabBar from './TabBar';
+import DiffReviewBar from './DiffReviewBar';
+import DiffReviewPanel from './DiffReviewPanel';
+import { useDiffReviewStore } from '@/stores/diffReviewStore';
 
 export default function EditorPanel() {
   const { tabs, activeTab, fileContents, openFile, updateContent } =
     useEditorStore();
   const theme = useLayoutStore((s) => s.theme);
+  const pendingReviews = useDiffReviewStore((s) => s.pendingReviews);
+  const showDiff = pendingReviews.length > 0;
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<any>(null);
 
@@ -66,7 +71,7 @@ export default function EditorPanel() {
     }
   }, [theme]);
 
-  if (tabs.length === 0) {
+  if (tabs.length === 0 && !showDiff) {
     return (
       <div className="h-full bg-base flex flex-col items-center justify-center text-overlay0 gap-3">
         <Code2 size={48} strokeWidth={1} />
@@ -77,32 +82,41 @@ export default function EditorPanel() {
 
   return (
     <div className="h-full bg-base flex flex-col">
-      <TabBar />
-      <div className="flex-1 overflow-hidden">
-        {activeTab && activeContent !== undefined && (
-          <Editor
-            language={activeLanguage}
-            value={activeContent}
-            theme={theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte'}
-            onMount={handleMount}
-            onChange={(value) => {
-              if (value !== undefined && activeTab) {
-                updateContent(activeTab, value);
-              }
-            }}
-            options={{
-              fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 14,
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              renderLineHighlight: 'line',
-              cursorBlinking: 'smooth',
-              smoothScrolling: true,
-              padding: { top: 8 },
-            }}
-          />
-        )}
-      </div>
+      <DiffReviewBar />
+      {showDiff ? (
+        <div className="flex-1 overflow-hidden">
+          <DiffReviewPanel />
+        </div>
+      ) : (
+        <>
+          <TabBar />
+          <div className="flex-1 overflow-hidden">
+            {activeTab && activeContent !== undefined && (
+              <Editor
+                language={activeLanguage}
+                value={activeContent}
+                theme={theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte'}
+                onMount={handleMount}
+                onChange={(value) => {
+                  if (value !== undefined && activeTab) {
+                    updateContent(activeTab, value);
+                  }
+                }}
+                options={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 14,
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  renderLineHighlight: 'line',
+                  cursorBlinking: 'smooth',
+                  smoothScrolling: true,
+                  padding: { top: 8 },
+                }}
+              />
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }
