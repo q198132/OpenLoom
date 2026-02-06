@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev -w packages/frontend",
-    "dev:backend": "npm run dev -w packages/backend"
+    "dev:backend": "tsx watch packages/backend/src/index.ts"
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
