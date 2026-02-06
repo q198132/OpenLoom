@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import AppLayout from './components/layout/AppLayout';
 import { useControlSocket } from './hooks/useWebSocket';
 import { useDiffReviewStore } from './stores/diffReviewStore';
+import { useLayoutStore } from './stores/layoutStore';
 import type { ControlMessage } from '@claudegui/shared';
 
 export default function App() {
