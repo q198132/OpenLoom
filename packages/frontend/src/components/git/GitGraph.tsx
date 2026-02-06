@@ -213,27 +213,22 @@ function CommitFiles({
   );
 }
 
-function DetailFileRow({ file, stats }: { file: string; stats: string }) {
-  const parts = file.replace(/\\/g, '/').split('/');
-  const name = parts.pop() || file;
-  const dir = parts.join('/');
-
-  // 解析 stats 中的 +/- 数量
-  const addMatch = stats.match(/(\d+)\s*insertion/);
-  const delMatch = stats.match(/(\d+)\s*deletion/);
-  const additions = addMatch ? addMatch[1] : null;
-  const deletions = delMatch ? delMatch[1] : null;
-
+function CommitFileIcon({ fileName }: { fileName: string }) {
+  const ext = fileName.split('.').pop()?.toLowerCase() || '';
+  let color = 'text-overlay1';
+  let text = '';
+  switch (ext) {
+    case 'ts': case 'tsx': color = 'text-blue'; text = 'TS'; break;
+    case 'js': case 'jsx': color = 'text-yellow'; text = 'JS'; break;
+    case 'json': color = 'text-yellow'; text = '{}'; break;
+    case 'css': color = 'text-blue'; text = '#'; break;
+    case 'html': color = 'text-red'; text = '<>'; break;
+    case 'md': color = 'text-subtext0'; text = 'M'; break;
+    default: text = '·'; break;
+  }
   return (
-    <div className="flex items-center h-[22px] px-3 hover:bg-surface0">
-      <div className="flex items-center gap-1.5 min-w-0 flex-1">
-        <span className="truncate text-subtext1">{name}</span>
-        {dir && <span className="truncate text-overlay0">{dir}</span>}
-      </div>
-      <div className="flex items-center gap-1 shrink-0 ml-1 font-mono">
-        {additions && <span className="text-green">+{additions}</span>}
-        {deletions && <span className="text-red">-{deletions}</span>}
-      </div>
-    </div>
+    <span className={`${color} font-mono text-[10px] w-4 text-center shrink-0`}>
+      {text}
+    </span>
   );
 }

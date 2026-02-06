@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
-import { Code2 } from 'lucide-react';
-import Editor, { type OnMount } from '@monaco-editor/react';
+import { Code2, X } from 'lucide-react';
+import Editor, { DiffEditor, type OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { useEditorStore } from '@/stores/editorStore';
 import { useLayoutStore } from '@/stores/layoutStore';
