@@ -16,6 +16,9 @@ app.get(`${API_PREFIX}/health`, (_req, res) => {
   res.json({ status: 'ok', timestamp: Date.now() });
 });
 
+// 文件系统 API
+app.use(`${API_PREFIX}/files`, fileRoutes);
+
 const server = createServer(app);
 const ptyManager = new PtyManager();
 
@@ -25,6 +28,10 @@ console.log(`[pty] spawned, pid: ${ptyManager.pid}`);
 
 // 设置 WebSocket
 const { broadcast } = setupWebSocket(server, ptyManager);
+
+// 启动文件监听
+startFileWatcher(rootDir, broadcast);
+console.log(`[watcher] watching ${rootDir}`);
 
 // 导出供后续模块使用
 export { app, broadcast, ptyManager };

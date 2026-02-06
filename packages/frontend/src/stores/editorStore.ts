@@ -1,0 +1,92 @@
+import { create } from 'zustand';
+import type { EditorTab } from '@claudegui/shared';
+
+const EXT_LANG_MAP: Record<string, string> = {
+  ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript',
+  json: 'json', html: 'html', css: 'css', scss: 'scss', less: 'less',
+  md: 'markdown', py: 'python', rs: 'rust', go: 'go', java: 'java',
+  yaml: 'yaml', yml: 'yaml', xml: 'xml', sql: 'sql', sh: 'shell',
+  bash: 'shell', toml: 'ini', env: 'ini', gitignore: 'ini',
+};
+
+function getLanguage(path: string): string {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  return EXT_LANG_MAP[ext] || 'plaintext';
+}
+
+interface EditorState {
+  tabs: EditorTab[];
+  activeTab: string | null;
+  fileContents: Map<string, string>;
+  openFile: (path: string) => Promise<void>;
+  closeTab: (path: string) => void;
+  setActiveTab: (path: string) => void;
+  updateContent: (path: string, content: string) => void;
+  getContent: (path: string) => string | undefined;
+}
+
+export const useEditorStore = create<EditorState>((set, get) => ({
+  tabs: [],
+  activeTab: null,
+  fileContents: new Map(),
+
+  openFile: async (path: string) => {
+    const { tabs, fileContents } = get();
+
+    // 已打开则切换
+    if (tabs.find((t) => t.path === path)) {
+      set({ activeTab: path });
+      return;
+    }
+
+    // 获取文件内容
+    const res = await fetch(`/api/files/read?path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    if (data.error) return;
+
+    const name = path.split('/').pop() || path;
+    const tab: EditorTab = {
+      path,
+      name,
+      language: getLanguage(path),
+      isDirty: false,
+    };
+
+    const next = new Map(fileContents);
+    next.set(path, data.content);
+
+    set({
+      tabs: [...tabs, tab],
+      activeTab: path,
+      fileContents: next,
+    });
+  },
+
+  closeTab: (path: string) => {
+    set((s) => {
+      const tabs = s.tabs.filter((t) => t.path !== path);
+      const next = new Map(s.fileContents);
+      next.delete(path);
+      const activeTab =
+        s.activeTab === path
+          ? tabs[tabs.length - 1]?.path ?? null
+          : s.activeTab;
+      return { tabs, activeTab, fileContents: next };
+    });
+  },
+
+  setActiveTab: (path) => set({ activeTab: path }),
+
+  updateContent: (path, content) => {
+    set((s) => {
+      const next = new Map(s.fileContents);
+      next.set(path, content);
+      const tabs = s.tabs.map((t) =>
+        t.path === path ? { ...t, isDirty: true } : t,
+      );
+      return { fileContents: next, tabs };
+    });
+  },
+
+  getContent: (path) => get().fileContents.get(path),
+}));
