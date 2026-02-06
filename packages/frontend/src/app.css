@@ -59,3 +59,24 @@ html, body, #root {
 [data-panel-resize-handle-id][data-resize-handle-active] {
   background: var(--color-accent);
 }
+
+/* Catppuccin Latte (Light) 主题覆盖 */
+[data-theme="light"] {
+  --color-base: #eff1f5;
+  --color-mantle: #e6e9ef;
+  --color-crust: #dce0e8;
+  --color-surface0: #ccd0da;
+  --color-surface1: #bcc0cc;
+  --color-surface2: #acb0be;
+  --color-overlay0: #9ca0b0;
+  --color-overlay1: #8c8fa1;
+  --color-text: #4c4f69;
+  --color-subtext0: #6c6f85;
+  --color-subtext1: #5c5f77;
+  --color-accent: #8839ef;
+  --color-green: #40a02b;
+  --color-red: #d20f39;
+  --color-yellow: #df8e1d;
+  --color-blue: #1e66f5;
+  --color-peach: #fe640b;
+}
