@@ -4,7 +4,7 @@ import { promisify } from 'util';
 
 const exec = promisify(execFile);
 const router = Router();
-const cwd = process.cwd();
+const cwd = process.env.PROJECT_ROOT || process.cwd();
 
 async function git(...args: string[]): Promise<string> {
   const { stdout } = await exec('git', args, { cwd, maxBuffer: 1024 * 1024 });
