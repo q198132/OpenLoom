@@ -5,6 +5,7 @@ import { DEFAULT_PORT, API_PREFIX } from '@claudegui/shared';
 import { PtyManager } from './pty/ptyManager.js';
 import { setupWebSocket } from './ws/wsHandler.js';
 import fileRoutes, { rootDir } from './api/fileRoutes.js';
+import gitRoutes from './api/gitRoutes.js';
 import { startFileWatcher } from './watcher/fileWatcher.js';
 
 const app = express();
@@ -18,6 +19,9 @@ app.get(`${API_PREFIX}/health`, (_req, res) => {
 
 // 文件系统 API
 app.use(`${API_PREFIX}/files`, fileRoutes);
+
+// Git API
+app.use(`${API_PREFIX}/git`, gitRoutes);
 
 const server = createServer(app);
 const ptyManager = new PtyManager();
