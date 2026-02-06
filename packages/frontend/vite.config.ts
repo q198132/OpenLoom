@@ -20,4 +20,19 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          monaco: ['monaco-editor', '@monaco-editor/react'],
+          xterm: [
+            '@xterm/xterm',
+            '@xterm/addon-fit',
+            '@xterm/addon-attach',
+            '@xterm/addon-web-links',
+          ],
+        },
+      },
+    },
+  },
 });
