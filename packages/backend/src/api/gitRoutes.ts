@@ -62,4 +62,15 @@ router.post('/unstage', async (req, res) => {
   }
 });
 
+// POST /api/git/commit
+router.post('/commit', async (req, res) => {
+  try {
+    const { message } = req.body as { message: string };
+    const result = await git('commit', '-m', message);
+    res.json({ ok: true, result });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;
