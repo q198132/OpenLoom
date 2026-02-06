@@ -61,6 +61,7 @@ export default function TerminalPanel() {
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
   const { connected, setConnected } = useTerminalStore();
+  const theme = useLayoutStore((s) => s.theme);
   const { send } = useControlSocket();
 
   useEffect(() => {
@@ -69,28 +70,7 @@ export default function TerminalPanel() {
     const term = new Terminal({
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: 14,
-      theme: {
-        background: '#11111b',
-        foreground: '#cdd6f4',
-        cursor: '#f5e0dc',
-        selectionBackground: '#585b70',
-        black: '#45475a',
-        red: '#f38ba8',
-        green: '#a6e3a1',
-        yellow: '#f9e2af',
-        blue: '#89b4fa',
-        magenta: '#cba6f7',
-        cyan: '#94e2d5',
-        white: '#bac2de',
-        brightBlack: '#585b70',
-        brightRed: '#f38ba8',
-        brightGreen: '#a6e3a1',
-        brightYellow: '#f9e2af',
-        brightBlue: '#89b4fa',
-        brightMagenta: '#cba6f7',
-        brightCyan: '#94e2d5',
-        brightWhite: '#a6adc8',
-      },
+      theme: DARK_THEME,
       cursorBlink: true,
       allowProposedApi: true,
     });
