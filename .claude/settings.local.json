@@ -15,7 +15,9 @@
       "Bash(npm run dev:backend:*)",
       "Bash(npm install:*)",
       "Bash(npx:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)"
     ]
   }
 }
