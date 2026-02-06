@@ -13,7 +13,9 @@ interface LayoutState {
 
 export const useLayoutStore = create<LayoutState>((set) => ({
   sidebarVisible: true,
+  sidebarTab: 'files',
   theme: 'dark',
   toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
+  setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   setTheme: (theme) => set({ theme }),
 }));
