@@ -95,13 +95,67 @@ router.get('/branches', async (_req, res) => {
 router.get('/log', async (_req, res) => {
   try {
     const raw = await git(
-      'log', '--oneline', '--format=%H|%h|%s|%an|%ci', '-20',
+      'log', '--all', '--format=%H|%h|%s|%an|%ci|%D', '-30',
     );
     const entries = raw.split('\n').filter(Boolean).map((line) => {
-      const [hash, shortHash, message, author, date] = line.split('|');
-      return { hash, shortHash, message, author, date };
+      const [hash, shortHash, message, author, date, refs] = line.split('|');
+      return { hash, shortHash, message, author, date, refs: refs || '' };
     });
     res.json(entries);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/git/show/:hash
+router.get('/show/:hash', async (req, res) => {
+  try {
+    const { hash } = req.params;
+    const info = await git(
+      'show', '--stat', '--format=%H|%h|%s|%an|%ae|%ci|%b', hash,
+    );
+    const lines = info.split('\n');
+    const [fullHash, shortHash, subject, author, email, date, ...rest] = lines[0].split('|');
+    const body = rest.join('|').trim();
+
+    const changedFiles: { file: string; stats: string }[] = [];
+    for (const fl of lines.slice(1)) {
+      const match = fl.match(/^\s*(.+?)\s+\|\s+(.+)$/);
+      if (match) {
+        changedFiles.push({ file: match[1].trim(), stats: match[2].trim() });
+      }
+    }
+
+    res.json({
+      hash: fullHash, shortHash, subject, author, email, date, body,
+      files: changedFiles,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/git/file-diff/:hash?file=xxx — 获取某个 commit 中某文件的新旧内容
+router.get('/file-diff/:hash', async (req, res) => {
+  try {
+    const { hash } = req.params;
+    const file = req.query.file as string;
+    if (!file) return res.status(400).json({ error: 'file required' });
+
+    let oldContent = '';
+    let newContent = '';
+
+    // 新版本内容
+    try {
+      newContent = await git('show', `${hash}:${file}`);
+    } catch { /* 文件可能是删除的 */ }
+
+    // 旧版本内容（parent commit）
+    try {
+      oldContent = await git('show', `${hash}~1:${file}`);
+    } catch { /* 文件可能是新增的 */ }
+
+    res.json({ oldContent, newContent, file });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

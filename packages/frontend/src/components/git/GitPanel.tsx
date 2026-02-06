@@ -4,6 +4,7 @@ import { useGitStore } from '@/stores/gitStore';
 import GitFileList from './GitFileList';
 import GitCommitBox from './GitCommitBox';
 import GitActions from './GitActions';
+import GitGraph from './GitGraph';
 
 export default function GitPanel() {
   const { branch, fetchStatus, fetchBranch, fetchLog } = useGitStore();
@@ -39,6 +40,7 @@ export default function GitPanel() {
       <GitCommitBox />
       <GitFileList />
       <GitActions />
+      <GitGraph />
     </div>
   );
 }

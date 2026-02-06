@@ -14,21 +14,34 @@ function getLanguage(path: string): string {
   return EXT_LANG_MAP[ext] || 'plaintext';
 }
 
+interface CommitDiffState {
+  hash: string;
+  shortHash: string;
+  file: string;
+  oldContent: string;
+  newContent: string;
+  language: string;
+}
+
 interface EditorState {
   tabs: EditorTab[];
   activeTab: string | null;
   fileContents: Map<string, string>;
+  commitDiff: CommitDiffState | null;
   openFile: (path: string) => Promise<void>;
   closeTab: (path: string) => void;
   setActiveTab: (path: string) => void;
   updateContent: (path: string, content: string) => void;
   getContent: (path: string) => string | undefined;
+  openCommitDiff: (hash: string, shortHash: string, file: string) => Promise<void>;
+  closeCommitDiff: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
   tabs: [],
   activeTab: null,
   fileContents: new Map(),
+  commitDiff: null,
 
   openFile: async (path: string) => {
     const { tabs, fileContents } = get();
@@ -89,4 +102,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   getContent: (path) => get().fileContents.get(path),
+
+  openCommitDiff: async (hash, shortHash, file) => {
+    const res = await fetch(`/api/git/file-diff/${hash}?file=${encodeURIComponent(file)}`);
+    const data = await res.json();
+    if (data.error) return;
+    set({
+      commitDiff: {
+        hash, shortHash, file,
+        oldContent: data.oldContent || '',
+        newContent: data.newContent || '',
+        language: getLanguage(file),
+      },
+    });
+  },
+
+  closeCommitDiff: () => set({ commitDiff: null }),
 }));

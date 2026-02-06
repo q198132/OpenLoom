@@ -115,9 +115,11 @@ export default function TerminalPanel() {
       term.loadAddon(attachAddon);
       setConnected(true);
 
-      // 延迟初始 fit，确保容器已有最终尺寸
+      // 多次延迟 fit，确保容器布局稳定后再同步尺寸到 PTY
       requestAnimationFrame(() => {
         doFitAndResize();
+        // 再延迟一次，防止面板布局动画未完成
+        setTimeout(doFitAndResize, 200);
       });
     };
 

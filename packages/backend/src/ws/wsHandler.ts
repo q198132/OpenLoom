@@ -15,8 +15,8 @@ export function setupWebSocket(server: Server, ptyManager: PtyManager) {
   wssData.on('connection', (ws) => {
     console.log('[ws/pty] client connected');
 
-    // PTY 输出 → WebSocket
-    ptyManager.onData((data) => {
+    // PTY 输出 → WebSocket（保存取消函数）
+    const removeDataListener = ptyManager.onData((data) => {
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(data);
       }
@@ -28,6 +28,7 @@ export function setupWebSocket(server: Server, ptyManager: PtyManager) {
     });
 
     ws.on('close', () => {
+      removeDataListener();
       console.log('[ws/pty] client disconnected');
     });
   });

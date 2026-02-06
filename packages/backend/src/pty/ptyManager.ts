@@ -46,12 +46,20 @@ export class PtyManager {
     }
   }
 
-  onData(listener: (data: string) => void): void {
+  onData(listener: (data: string) => void): () => void {
     this.dataListeners.push(listener);
+    return () => {
+      const idx = this.dataListeners.indexOf(listener);
+      if (idx !== -1) this.dataListeners.splice(idx, 1);
+    };
   }
 
-  onExit(listener: (code: number) => void): void {
+  onExit(listener: (code: number) => void): () => void {
     this.exitListeners.push(listener);
+    return () => {
+      const idx = this.exitListeners.indexOf(listener);
+      if (idx !== -1) this.exitListeners.splice(idx, 1);
+    };
   }
 
   kill(): void {

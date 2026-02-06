@@ -37,6 +37,7 @@ export interface GitLogEntry {
   message: string;
   author: string;
   date: string;
+  refs: string;
 }
 
 export interface GitBranchInfo {
