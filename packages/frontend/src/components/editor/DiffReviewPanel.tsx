@@ -1,6 +1,7 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { useDiffReviewStore } from '@/stores/diffReviewStore';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import { Check, X } from 'lucide-react';
 
 export default function DiffReviewPanel() {
