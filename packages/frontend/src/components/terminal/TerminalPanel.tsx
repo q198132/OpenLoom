@@ -124,6 +124,13 @@ export default function TerminalPanel() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 主题切换联动
+  useEffect(() => {
+    if (termRef.current) {
+      termRef.current.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+    }
+  }, [theme]);
+
   return (
     <div className="h-full bg-crust flex flex-col">
       <div className="flex items-center gap-2 h-8 px-3 bg-mantle border-b border-surface0">
