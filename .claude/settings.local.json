@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__web-search-prime__webSearchPrime",
+      "mcp__web-reader__webReader",
+      "Bash(dir:*)",
+      "mcp__zread__get_repo_structure",
+      "mcp__zread__read_file",
+      "Bash(git clone:*)",
+      "mcp__zread__search_doc",
+      "WebSearch",
+      "Bash(npm install)",
+      "Bash(npm config:*)",
+      "Bash(npm run dev:frontend:*)",
+      "Bash(npm run dev:backend:*)",
+      "Bash(npm install:*)",
+      "Bash(npx:*)"
+    ]
+  }
+}
