@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 
+type SidebarTab = 'files' | 'git';
+
 interface LayoutState {
   sidebarVisible: boolean;
+  sidebarTab: SidebarTab;
   theme: 'dark' | 'light';
   toggleSidebar: () => void;
+  setSidebarTab: (tab: SidebarTab) => void;
   setTheme: (theme: 'dark' | 'light') => void;
 }
 
