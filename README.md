@@ -64,6 +64,25 @@ npm run dev
 
 Open `http://localhost:5173` in your browser. That's it. You're weaving.
 
+### Windows Quick Launch
+
+Double-click `start.bat` in the project root — it starts the server and opens the browser automatically.
+
+### CLI Command
+
+Install the CLI globally, then open any project from anywhere:
+
+```bash
+# Link the CLI (run once in the project root)
+npm link
+
+# Open current directory
+openloom
+
+# Open a specific project
+openloom /path/to/your/project
+```
+
 ---
 
 ## Features

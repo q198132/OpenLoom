@@ -65,6 +65,25 @@ npm run dev
 
 浏览器打开 `http://localhost:5173`，开始编织。
 
+### Windows 快速启动
+
+双击项目根目录的 `start.bat` —— 自动启动服务并打开浏览器。
+
+### CLI 命令
+
+全局安装 CLI 后，可以在任意位置打开项目：
+
+```bash
+# 链接 CLI（在项目根目录执行一次）
+npm link
+
+# 打开当前目录
+openloom
+
+# 打开指定项目
+openloom /path/to/your/project
+```
+
 ---
 
 ## 功能特性
