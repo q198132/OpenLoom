@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import { useEditorStore } from '@/stores/editorStore';
+import * as api from '@/lib/api';
 import type { GitLogEntry } from '@openloom/shared';
 
 interface CommitDetail {
@@ -31,8 +32,7 @@ export default function GitGraph() {
     setSelectedHash(hash);
     setLoading(true);
     try {
-      const res = await fetch(`/api/git/show/${hash}`);
-      const data = await res.json();
+      const data = await api.gitShow(hash);
       if (data.hash) setDetail(data);
     } catch { /* ignore */ }
     setLoading(false);

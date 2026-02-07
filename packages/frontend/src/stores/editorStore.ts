@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { EditorTab } from '@openloom/shared';
+import * as api from '@/lib/api';
 
 const EXT_LANG_MAP: Record<string, string> = {
   ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript',
@@ -55,9 +56,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
 
     // 获取文件内容
-    const res = await fetch(`/api/files/read?path=${encodeURIComponent(path)}`);
-    const data = await res.json();
-    if (data.error) return;
+    const data = await api.readFile(path) as { content: string; path: string };
+    if (!data.content && data.content !== '') return;
 
     const name = path.split('/').pop() || path;
     const tab: EditorTab = {
@@ -106,35 +106,33 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   getContent: (path) => get().fileContents.get(path),
 
   openCommitDiff: async (hash, shortHash, file) => {
-    const res = await fetch(`/api/git/file-diff/${hash}?file=${encodeURIComponent(file)}`);
-    const data = await res.json();
-    if (data.error) return;
-    set({
-      commitDiff: {
-        hash, shortHash, file,
-        oldContent: data.oldContent || '',
-        newContent: data.newContent || '',
-        language: getLanguage(file),
-      },
-    });
+    try {
+      const data = await api.gitFileDiff(hash, file) as any;
+      set({
+        commitDiff: {
+          hash, shortHash, file,
+          oldContent: data.oldContent || '',
+          newContent: data.newContent || '',
+          language: getLanguage(file),
+        },
+      });
+    } catch { /* ignore */ }
   },
 
   openWorkingDiff: async (file, staged) => {
-    const res = await fetch(
-      `/api/git/working-diff?file=${encodeURIComponent(file)}&staged=${staged}`,
-    );
-    const data = await res.json();
-    if (data.error) return;
-    set({
-      commitDiff: {
-        hash: staged ? 'staged' : 'working',
-        shortHash: staged ? '暂存区' : '工作区',
-        file,
-        oldContent: data.oldContent || '',
-        newContent: data.newContent || '',
-        language: getLanguage(file),
-      },
-    });
+    try {
+      const data = await api.gitWorkingDiff(file, staged) as any;
+      set({
+        commitDiff: {
+          hash: staged ? 'staged' : 'working',
+          shortHash: staged ? '暂存区' : '工作区',
+          file,
+          oldContent: data.oldContent || '',
+          newContent: data.newContent || '',
+          language: getLanguage(file),
+        },
+      });
+    } catch { /* ignore */ }
   },
 
   closeCommitDiff: () => set({ commitDiff: null }),

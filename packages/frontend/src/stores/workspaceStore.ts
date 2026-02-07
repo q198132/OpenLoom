@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as api from '@/lib/api';
 
 interface WorkspaceState {
   currentPath: string;
@@ -19,8 +20,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   fetchWorkspace: async () => {
     try {
-      const res = await fetch('/api/workspace');
-      const data = await res.json();
+      const data = await api.getWorkspace() as any;
       set({ currentPath: data.path, projectName: data.projectName });
       if (data.projectName) document.title = `${data.projectName} - OpenLoom`;
     } catch { /* ignore */ }
@@ -28,12 +28,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   openFolder: async (path: string) => {
     try {
-      const res = await fetch('/api/workspace/open', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path }),
-      });
-      const data = await res.json();
+      const data = await api.openWorkspace(path) as any;
       if (data.ok) {
         set({
           currentPath: data.path,
@@ -51,8 +46,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   fetchRecent: async () => {
     try {
-      const res = await fetch('/api/workspace/recent');
-      const list = await res.json();
+      const list = await api.getRecent() as string[];
       if (Array.isArray(list)) set({ recentProjects: list });
     } catch { /* ignore */ }
   },

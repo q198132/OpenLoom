@@ -19,7 +19,7 @@ import SettingsDialog from '../settings/SettingsDialog';
 export default function AppLayout() {
   const sidebarVisible = useLayoutStore((s) => s.sidebarVisible);
 
-  // 监听 WebSocket workspace-changed 消息
+  // 监听 Tauri workspace-changed 事件
   const handleControlMessage = useCallback((msg: ControlMessage) => {
     if (msg.type === 'workspace-changed') {
       document.title = `${msg.projectName} - OpenLoom`;

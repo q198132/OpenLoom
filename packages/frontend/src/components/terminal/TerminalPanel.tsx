@@ -3,12 +3,11 @@ import { TerminalSquare, Circle } from 'lucide-react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
-import { AttachAddon } from '@xterm/addon-attach';
 import '@xterm/xterm/css/xterm.css';
-import { WS_PTY_PATH } from '@openloom/shared';
+import { listen } from '@tauri-apps/api/event';
+import * as api from '@/lib/api';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
-import { sendControlMessage } from '@/hooks/useWebSocket';
 
 const DARK_THEME = {
   background: '#11111b',
@@ -96,7 +95,7 @@ export default function TerminalPanel() {
       if (cols !== lastCols || rows !== lastRows) {
         lastCols = cols;
         lastRows = rows;
-        sendControlMessage({ type: 'pty-resize', cols, rows });
+        api.ptyResize(cols, rows).catch(() => {});
       }
     };
 
@@ -105,26 +104,35 @@ export default function TerminalPanel() {
       resizeTimer = setTimeout(doFitAndResize, 50);
     };
 
-    // 连接 PTY WebSocket
-    const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${location.host}${WS_PTY_PATH}`;
-    const ws = new WebSocket(wsUrl);
+    // 启动 Tauri PTY 并监听输出事件
+    let unlistenFn: (() => void) | null = null;
 
-    ws.onopen = () => {
-      const attachAddon = new AttachAddon(ws);
-      term.loadAddon(attachAddon);
-      setConnected(true);
+    const startPty = async () => {
+      try {
+        await api.ptySpawn();
+        setConnected(true);
 
-      // 多次延迟 fit，确保容器布局稳定后再同步尺寸到 PTY
-      requestAnimationFrame(() => {
-        doFitAndResize();
-        // 再延迟一次，防止面板布局动画未完成
-        setTimeout(doFitAndResize, 200);
-      });
+        // 监听 PTY 输出事件
+        const unlisten = await listen<string>('pty-output', (event) => {
+          term.write(event.payload);
+        });
+        unlistenFn = unlisten;
+
+        // 终端输入 → PTY
+        term.onData((data) => {
+          api.ptyWrite(data).catch(() => {});
+        });
+
+        requestAnimationFrame(() => {
+          doFitAndResize();
+          setTimeout(doFitAndResize, 200);
+        });
+      } catch {
+        setConnected(false);
+      }
     };
 
-    ws.onclose = () => setConnected(false);
-    ws.onerror = () => setConnected(false);
+    startPty();
 
     // ResizeObserver 监听容器变化（防抖）
     const observer = new ResizeObserver(debouncedFit);
@@ -133,7 +141,7 @@ export default function TerminalPanel() {
     return () => {
       clearTimeout(resizeTimer);
       observer.disconnect();
-      ws.close();
+      if (unlistenFn) unlistenFn();
       term.dispose();
       termRef.current = null;
       fitRef.current = null;

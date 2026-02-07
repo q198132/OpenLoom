@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
+import * as api from '@/lib/api';
 
 export default function GitCommitBox() {
   const { files, commitMessage, setCommitMessage, commit, stageAll } = useGitStore();
@@ -29,23 +30,14 @@ export default function GitCommitBox() {
     setGenerating(true);
     try {
       // 1. 获取暂存区 diff
-      const diffRes = await fetch('/api/git/staged-diff');
-      if (!diffRes.ok) { setGenerating(false); return; }
-      const { stat, diff, files: diffFiles } = await diffRes.json();
+      const { stat, diff, files: diffFiles } = await api.gitStagedDiff();
 
       if (!stat && !diff) { setGenerating(false); return; }
 
       // 2. 尝试 AI 生成
       try {
-        const aiRes = await fetch('/api/ai/generate-commit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ diff, stat }),
-        });
-        if (aiRes.ok) {
-          const { message } = await aiRes.json();
-          if (message) { setCommitMessage(message); setGenerating(false); return; }
-        }
+        const { message } = await api.generateCommitMessage(diff, stat);
+        if (message) { setCommitMessage(message); setGenerating(false); return; }
       } catch {
         // AI 不可用，走 fallback
       }

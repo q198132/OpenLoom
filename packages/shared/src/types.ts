@@ -6,15 +6,10 @@ export interface FileNode {
   children?: FileNode[];
 }
 
-// WebSocket 控制消息
+// Tauri 事件消息
 export type ControlMessage =
-  | { type: 'pty-resize'; cols: number; rows: number }
   | { type: 'file-changed'; event: string; path: string }
   | { type: 'file-snapshot'; path: string; oldContent: string; newContent: string }
-  | { type: 'diff-accept'; path: string }
-  | { type: 'diff-reject'; path: string }
-  | { type: 'diff-accept-all' }
-  | { type: 'diff-reject-all' }
   | { type: 'workspace-changed'; path: string; projectName: string };
 
 // Diff 审核项

@@ -2,7 +2,7 @@
 
 # OpenLoom
 
-### AI Coding 时代的轻量级代码查看器
+### AI Coding 时代的轻量级桌面代码编辑器
 
 **看代码 · 管 Git · 其余交给 AI**
 
@@ -16,37 +16,23 @@
 
 ---
 
-## 复制给 AI，一键部署
-
-把下面这段话发送给你的 AI 助手（Claude Code、OpenCode 等），即可自动部署：
-
-> 帮我克隆并部署 OpenLoom 项目。步骤如下：
-> 1. 克隆仓库：`git clone https://github.com/your-username/openloom.git`
-> 2. 进入目录：`cd openloom`
-> 3. 安装依赖：`npm install`
-> 4. 启动服务：`npm run dev`
-> 5. 确认 http://localhost:5173 可以正常访问
-> 6. （可选）执行 `npm link` 注册全局 CLI 命令 `openloom`
-
----
-
 ## 什么是 OpenLoom？
 
 在 AI Coding 时代，Claude Code、OpenCode 等终端 AI 工具已经能帮你写代码、改 Bug、做重构。**你真正需要的不再是一个臃肿的全功能 IDE，而是一个轻量的界面来做两件事：看代码和管 Git。**
 
 OpenLoom 就是为此而生的。
 
-它是一个**极简的 Web 代码查看器**，直接在浏览器中运行。没有 Electron，没有插件系统，没有调试器——这些你不需要，因为 AI 在终端里帮你搞定了。
+它是一个基于 **Tauri 2.0** 的**轻量级原生桌面应用**，Rust 后端 + React 前端，启动快、体积小、资源占用低。
 
 ### 与传统 IDE 的区别
 
 | | VS Code / Cursor | OpenLoom |
 |---|---|---|
 | 定位 | 全功能 IDE | AI 时代的轻量伴侣 |
-| 体积 | 数百 MB | 几 MB |
+| 体积 | 数百 MB | ~10 MB |
+| 运行方式 | Electron | Tauri 2.0（原生 WebView） |
 | 写代码 | 手动编写 + AI 辅助 | 交给终端中的 AI |
 | 你做什么 | 一切 | **看代码 + 管 Git** |
-| AI 集成 | 内置 AI 面板 | 终端直连 Claude Code / OpenCode |
 
 ### 工作流
 
@@ -57,21 +43,22 @@ OpenLoom                              → 看变更、审 Diff、提交 Git
 
 你只需要打开 OpenLoom，观察 AI 在终端中实时修改的文件，审查 Diff，然后一键提交。
 
-- 功能完整的 **Monaco Editor**（与 VS Code 同款引擎）
-- 集成**终端**，支持真实 PTY
-- **文件树**，支持右键菜单——新建、重命名、删除
-- **Git 管理**——状态、暂存、提交、分支切换、提交图
-- **全局搜索**（Ctrl+Shift+F）——跨文件全文搜索
-- **快速打开**（Ctrl+P）——模糊匹配快速定位文件
-- **Diff 审查**——审查 AI 生成的代码变更后再接受
-- **AI 提交信息生成**——基于暂存区 diff 自动生成语义化 commit message
-- **深色/浅色主题**——内置 Catppuccin Mocha 和 Latte
-- **工作区切换**——在多个项目间无缝跳转
+- **Monaco Editor** — 与 VS Code 同款编辑器引擎
+- **内置终端** — 基于 xterm.js + portable-pty（Rust）的完整 PTY 终端
+- **文件树** — 右键菜单支持新建、重命名、删除，实时监听文件变更
+- **Git 管理** — 状态、暂存、提交、分支切换、提交历史图
+- **全局搜索**（Ctrl+Shift+F）— 跨文件全文搜索
+- **快速打开**（Ctrl+P）— 模糊匹配快速定位文件
+- **Diff 审查** — 审查 AI 生成的代码变更后再接受
+- **AI 提交信息** — 基于暂存区 diff 自动生成语义化 commit message
+- **Catppuccin 主题** — Mocha（暗色）和 Latte（亮色）
+- **工作区切换** — 多项目间无缝跳转
 
 ---
 
 ## 目录
 
+- [环境要求](#环境要求)
 - [快速开始](#快速开始)
 - [功能特性](#功能特性)
 - [快捷键](#快捷键)
@@ -82,6 +69,13 @@ OpenLoom                              → 看变更、审 Diff、提交 Git
 
 ---
 
+## 环境要求
+
+- [Node.js](https://nodejs.org/) >= 18
+- [Rust](https://rustup.rs/) >= 1.70
+- [Git](https://git-scm.com/)
+- Windows: MSVC C++ 构建工具（通过 Visual Studio Installer 安装）
+
 ## 快速开始
 
 ```bash
@@ -89,32 +83,14 @@ OpenLoom                              → 看变更、审 Diff、提交 Git
 git clone https://github.com/your-username/openloom.git
 cd openloom
 
-# 安装依赖
+# 安装前端依赖
 npm install
 
-# 启动开发服务器
-npm run dev
-```
+# 开发模式（自动启动 Vite + Tauri）
+npm run tauri:dev
 
-在浏览器中打开 `http://localhost:5173`，即可开始使用。
-
-### Windows 快速启动
-
-双击项目根目录下的 `start.bat`，自动启动服务并打开浏览器。
-
-### CLI 命令
-
-全局安装 CLI 后，可在任意位置打开项目：
-
-```bash
-# 链接 CLI（在项目根目录执行一次）
-npm link
-
-# 打开当前目录
-openloom
-
-# 打开指定项目
-openloom /path/to/your/project
+# 生产构建（生成安装包）
+npm run tauri:build
 ```
 
 ---
@@ -141,14 +117,14 @@ OpenLoom 的核心。基于 **Monaco Editor**——与 VS Code 同款引擎。
 
 - 右键菜单：**新建文件**、**新建文件夹**、**重命名**、**删除**
 - 行内输入，无弹窗干扰
-- 通过 WebSocket 自动刷新外部文件变更
+- 通过 Tauri 事件自动刷新外部文件变更
 - 智能排序：文件夹优先，按字母排列
 
 ### 终端
 
-真正的终端，通过 `node-pty` 提供完整 PTY 支持。
+真正的终端，通过 Rust `portable-pty` 提供完整 PTY 支持。
 
-- 基于 WebSocket 的实时通信
+- 基于 Tauri 事件的实时通信
 - xterm.js + WebGL 渲染
 - 自动适配面板大小
 - 链接检测，可点击 URL
@@ -192,7 +168,7 @@ AI 写代码，你来决定保留什么。这正是 IDE/CLI 编程工具的核�
 - 并排 diff 查看器，清晰对比变更前后
 - 按文件接受或拒绝变更
 - 批量接受/拒绝全部
-- 通过 WebSocket 实时文件快照
+- 通过 Tauri 事件实时文件快照
 
 ### AI 设置
 

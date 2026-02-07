@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { DiffReviewItem } from '@openloom/shared';
+import * as api from '@/lib/api';
 
 interface DiffReviewState {
   pendingReviews: DiffReviewItem[];
@@ -43,11 +44,7 @@ export const useDiffReviewStore = create<DiffReviewState>((set, get) => ({
     if (!review) return;
 
     // 写回旧内容
-    await fetch('/api/files/write', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path, content: review.oldContent }),
-    });
+    await api.writeFile(path, review.oldContent);
 
     set((s) => {
       const remaining = s.pendingReviews.filter((r) => r.path !== path);
@@ -66,13 +63,7 @@ export const useDiffReviewStore = create<DiffReviewState>((set, get) => ({
   rejectAll: async () => {
     const reviews = get().pendingReviews;
     await Promise.all(
-      reviews.map((r) =>
-        fetch('/api/files/write', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: r.path, content: r.oldContent }),
-        }),
-      ),
+      reviews.map((r) => api.writeFile(r.path, r.oldContent)),
     );
     set({ pendingReviews: [], activeReviewPath: null });
   },

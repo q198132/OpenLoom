@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as api from '@/lib/api';
 
 interface SearchResult {
   file: string;
@@ -27,10 +28,7 @@ export const useSearchStore = create<SearchState>((set) => ({
     }
     set({ query, loading: true });
     try {
-      const res = await fetch(
-        `/api/files/search?q=${encodeURIComponent(query)}&maxResults=100`,
-      );
-      const data = await res.json();
+      const data = await api.searchFiles(query, 100) as any;
       set({ results: data.results || [], loading: false });
     } catch {
       set({ results: [], loading: false });

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { FileNode } from '@openloom/shared';
+import * as api from '@/lib/api';
 
 interface FileTreeState {
   nodes: FileNode[];
@@ -23,8 +24,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   loading: false,
 
   fetchChildren: async (dir = '') => {
-    const res = await fetch(`/api/files/tree?dir=${encodeURIComponent(dir)}`);
-    const nodes: FileNode[] = await res.json();
+    const nodes = await api.getFileTree(dir || undefined) as FileNode[];
     return nodes;
   },
 
@@ -50,12 +50,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
 
   createFile: async (filePath: string) => {
     try {
-      const res = await fetch('/api/files/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: filePath }),
-      });
-      if (!res.ok) return false;
+      await api.createFile(filePath);
       await get().refreshRoot();
       return true;
     } catch { return false; }
@@ -63,12 +58,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
 
   createDir: async (dirPath: string) => {
     try {
-      const res = await fetch('/api/files/mkdir', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: dirPath }),
-      });
-      if (!res.ok) return false;
+      await api.createDir(dirPath);
       await get().refreshRoot();
       return true;
     } catch { return false; }
@@ -76,12 +66,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
 
   renameNode: async (oldPath: string, newPath: string) => {
     try {
-      const res = await fetch('/api/files/rename', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ oldPath, newPath }),
-      });
-      if (!res.ok) return false;
+      await api.renameNode(oldPath, newPath);
       await get().refreshRoot();
       return true;
     } catch { return false; }
@@ -89,12 +74,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
 
   deleteNode: async (nodePath: string) => {
     try {
-      const res = await fetch('/api/files/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: nodePath }),
-      });
-      if (!res.ok) return false;
+      await api.deleteNode(nodePath);
       await get().refreshRoot();
       return true;
     } catch { return false; }

@@ -16,6 +16,7 @@
     "dev:backend": "tsx watch packages/backend/src/index.ts"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.10.0",
     "concurrently": "^9.1.0",
     "typescript": "^5.7.0"
   }

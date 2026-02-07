@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { FolderOpen, ArrowUp, X } from 'lucide-react';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import * as api from '@/lib/api';
 
 interface DirEntry {
   name: string;
@@ -24,8 +25,7 @@ export default function FolderBrowserDialog() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/workspace/browse?dir=${encodeURIComponent(dir)}`);
-      const data = await res.json();
+      const data = await api.browseDirs(dir);
       if (data.error) {
         setError(data.error);
       } else {

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import * as api from '@/lib/api';
 
 interface AiSettingsState {
   baseUrl: string;
@@ -17,9 +18,7 @@ export const useAiSettingsStore = create<AiSettingsState>((set) => ({
 
   fetchSettings: async () => {
     try {
-      const res = await fetch('/api/ai/settings');
-      if (!res.ok) return;
-      const data = await res.json();
+      const data = await api.getAiSettings() as any;
       set({ baseUrl: data.baseUrl, apiKey: data.apiKey, model: data.model, loaded: true });
     } catch {
       // ignore
@@ -28,14 +27,8 @@ export const useAiSettingsStore = create<AiSettingsState>((set) => ({
 
   saveSettings: async (settings) => {
     try {
-      const res = await fetch('/api/ai/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings),
-      });
-      if (res.ok) {
-        set({ baseUrl: settings.baseUrl, apiKey: settings.apiKey, model: settings.model });
-      }
+      await api.saveAiSettings(settings);
+      set({ baseUrl: settings.baseUrl, apiKey: settings.apiKey, model: settings.model });
     } catch {
       // ignore
     }

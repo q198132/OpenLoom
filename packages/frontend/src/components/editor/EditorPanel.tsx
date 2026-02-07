@@ -4,6 +4,7 @@ import Editor, { DiffEditor, type OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { useEditorStore } from '@/stores/editorStore';
 import { useLayoutStore } from '@/stores/layoutStore';
+import * as api from '@/lib/api';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import TabBar from './TabBar';
 import DiffReviewBar from './DiffReviewBar';
@@ -41,11 +42,7 @@ export default function EditorPanel() {
         if (!activeTab) return;
         const content = fileContents.get(activeTab);
         if (content === undefined) return;
-        fetch('/api/files/write', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path: activeTab, content }),
-        });
+        api.writeFile(activeTab, content);
       }
     };
     window.addEventListener('keydown', handler);

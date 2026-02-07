@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { File } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
+import * as api from '@/lib/api';
 
 export default function QuickOpenDialog() {
   const { quickOpenVisible, toggleQuickOpen } = useLayoutStore();
@@ -14,8 +15,7 @@ export default function QuickOpenDialog() {
     if (!quickOpenVisible) return;
     setQuery('');
     setSelectedIndex(0);
-    fetch('/api/files/list')
-      .then((res) => res.json())
+    api.listFiles()
       .then((files: string[]) => setAllFiles(files))
       .catch(() => setAllFiles([]));
   }, [quickOpenVisible]);

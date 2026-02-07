@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { GitFileStatus, GitLogEntry, GitBranchInfo } from '@openloom/shared';
+import * as api from '@/lib/api';
 
 interface GitState {
   files: GitFileStatus[];
@@ -34,54 +35,39 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   fetchStatus: async () => {
     try {
-      const res = await fetch('/api/git/status');
-      const files = await res.json();
+      const files = await api.gitStatus() as GitFileStatus[];
       if (Array.isArray(files)) set({ files });
     } catch { /* ignore */ }
   },
 
   fetchBranch: async () => {
     try {
-      const res = await fetch('/api/git/branches');
-      const branch = await res.json();
+      const branch = await api.gitBranches() as GitBranchInfo;
       if (branch.current) set({ branch });
     } catch { /* ignore */ }
   },
 
   fetchLog: async () => {
     try {
-      const res = await fetch('/api/git/log');
-      const log = await res.json();
+      const log = await api.gitLog() as GitLogEntry[];
       if (Array.isArray(log)) set({ log });
     } catch { /* ignore */ }
   },
 
   stageFiles: async (paths) => {
-    await fetch('/api/git/stage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths }),
-    });
+    await api.gitStage(paths);
     await get().fetchStatus();
   },
 
   stageAll: async () => {
     const unstaged = get().files.filter((f) => !f.staged).map((f) => f.path);
     if (unstaged.length === 0) return;
-    await fetch('/api/git/stage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths: unstaged }),
-    });
+    await api.gitStage(unstaged);
     await get().fetchStatus();
   },
 
   unstageFiles: async (paths) => {
-    await fetch('/api/git/unstage', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ paths }),
-    });
+    await api.gitUnstage(paths);
     await get().fetchStatus();
   },
 
@@ -90,22 +76,17 @@ export const useGitStore = create<GitState>((set, get) => ({
     if (!msg) return false;
     set({ error: null });
     try {
-      const res = await fetch('/api/git/commit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg }),
-      });
-      const data = await res.json();
+      const data = await api.gitCommit(msg) as any;
       if (data.ok) {
         set({ commitMessage: '' });
         await get().fetchStatus();
         await get().fetchLog();
         return true;
       }
-      set({ error: data.error || '提交失败' });
+      set({ error: '提交失败' });
       return false;
     } catch (e: any) {
-      set({ error: e.message || '提交失败' });
+      set({ error: e.toString() || '提交失败' });
       return false;
     }
   },
@@ -113,12 +94,10 @@ export const useGitStore = create<GitState>((set, get) => ({
   push: async () => {
     set({ error: null });
     try {
-      const res = await fetch('/api/git/push', { method: 'POST' });
-      const data = await res.json();
-      if (data.error) set({ error: data.error });
+      const data = await api.gitPush() as any;
       return !!data.ok;
     } catch (e: any) {
-      set({ error: e.message || 'Push 失败' });
+      set({ error: e.toString() || 'Push 失败' });
       return false;
     }
   },
@@ -126,16 +105,15 @@ export const useGitStore = create<GitState>((set, get) => ({
   pull: async () => {
     set({ error: null });
     try {
-      const res = await fetch('/api/git/pull', { method: 'POST' });
-      const data = await res.json();
+      const data = await api.gitPull() as any;
       if (data.ok) {
         await get().fetchStatus();
         return true;
       }
-      set({ error: data.error || 'Pull 失败' });
+      set({ error: 'Pull 失败' });
       return false;
     } catch (e: any) {
-      set({ error: e.message || 'Pull 失败' });
+      set({ error: e.toString() || 'Pull 失败' });
       return false;
     }
   },
