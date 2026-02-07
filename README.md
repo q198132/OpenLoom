@@ -2,9 +2,9 @@
 
 # OpenLoom
 
-### The Web IDE That Weaves Your Code.
+### AI Coding 时代的轻量级代码查看器
 
-**AI-Native. Lightweight. Open Source.**
+**看代码 · 管 Git · 其余交给 AI**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -12,227 +12,248 @@
 
 ---
 
-> "If VS Code is the Swiss Army knife, OpenLoom is the loom that weaves your entire project together — editor, terminal, Git, file tree, all in one thread."
+> "AI 时代，你不需要一个什么都能做的 IDE。你只需要看清代码、管好提交，剩下的交给终端里的 AI。"
 
 ---
 
-## What is OpenLoom?
+## 什么是 OpenLoom？
 
-OpenLoom is a **lightweight, web-based IDE** built for developers who want a clean, fast, and integrated development environment — right in the browser.
+在 AI Coding 时代，Claude Code、OpenCode 等终端 AI 工具已经能帮你写代码、改 Bug、做重构。**你真正需要的不再是一个臃肿的全功能 IDE，而是一个轻量的界面来做两件事：看代码和管 Git。**
 
-No Electron. No bloat. Just a Node.js backend and a React frontend, woven together.
+OpenLoom 就是为此而生的。
 
-**Start with what matters. Ship with confidence.**
+它是一个**极简的 Web 代码查看器**，直接在浏览器中运行。没有 Electron，没有插件系统，没有调试器——这些你不需要，因为 AI 在终端里帮你搞定了。
 
-- Full-featured **Monaco Editor** (the same engine behind VS Code)
-- Integrated **terminal** with real PTY support
-- **File tree** with right-click context menu — create, rename, delete
-- **Git management** — status, staging, commits, branch switching, log graph
-- **Global search** (Ctrl+Shift+F) — search across all project files
-- **Quick open** (Ctrl+P) — fuzzy-find any file instantly
-- **Diff review** — review AI-generated changes before accepting
-- **AI Commit Message** — auto-generate semantic commit messages from staged diff
-- **Dark/Light themes** — Catppuccin Mocha & Latte built-in
-- **Workspace switching** — jump between projects seamlessly
+### 与传统 IDE 的区别
+
+| | VS Code / Cursor | OpenLoom |
+|---|---|---|
+| 定位 | 全功能 IDE | AI 时代的轻量伴侣 |
+| 体积 | 数百 MB | 几 MB |
+| 写代码 | 手动编写 + AI 辅助 | 交给终端中的 AI |
+| 你做什么 | 一切 | **看代码 + 管 Git** |
+| AI 集成 | 内置 AI 面板 | 终端直连 Claude Code / OpenCode |
+
+### 工作流
+
+```
+终端中的 AI（Claude Code / OpenCode）→ 写代码、改代码
+OpenLoom                              → 看变更、审 Diff、提交 Git
+```
+
+你只需要打开 OpenLoom，观察 AI 在终端中实时修改的文件，审查 Diff，然后一键提交。
+
+- 功能完整的 **Monaco Editor**（与 VS Code 同款引擎）
+- 集成**终端**，支持真实 PTY
+- **文件树**，支持右键菜单——新建、重命名、删除
+- **Git 管理**——状态、暂存、提交、分支切换、提交图
+- **全局搜索**（Ctrl+Shift+F）——跨文件全文搜索
+- **快速打开**（Ctrl+P）——模糊匹配快速定位文件
+- **Diff 审查**——审查 AI 生成的代码变更后再接受
+- **AI 提交信息生成**——基于暂存区 diff 自动生成语义化 commit message
+- **深色/浅色主题**——内置 Catppuccin Mocha 和 Latte
+- **工作区切换**——在多个项目间无缝跳转
 
 ---
 
-## Contents
+## 目录
 
-- [Quick Start](#quick-start)
-- [Features](#features)
-- [Keyboard Shortcuts](#keyboard-shortcuts)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [License](#license)
+- [快速开始](#快速开始)
+- [功能特性](#功能特性)
+- [快捷键](#快捷键)
+- [技术栈](#技术栈)
+- [项目结构](#项目结构)
+- [参与贡献](#参与贡献)
+- [许可证](#许可证)
 
 ---
 
-## Quick Start
+## 快速开始
 
 ```bash
-# Clone the repo
+# 克隆仓库
 git clone https://github.com/your-username/openloom.git
 cd openloom
 
-# Install dependencies
+# 安装依赖
 npm install
 
-# Start development server
+# 启动开发服务器
 npm run dev
 ```
 
-Open `http://localhost:5173` in your browser. That's it. You're weaving.
+在浏览器中打开 `http://localhost:5173`，即可开始使用。
 
-### Windows Quick Launch
+### Windows 快速启动
 
-Double-click `start.bat` in the project root — it starts the server and opens the browser automatically.
+双击项目根目录下的 `start.bat`，自动启动服务并打开浏览器。
 
-### CLI Command
+### CLI 命令
 
-Install the CLI globally, then open any project from anywhere:
+全局安装 CLI 后，可在任意位置打开项目：
 
 ```bash
-# Link the CLI (run once in the project root)
+# 链接 CLI（在项目根目录执行一次）
 npm link
 
-# Open current directory
+# 打开当前目录
 openloom
 
-# Open a specific project
+# 打开指定项目
 openloom /path/to/your/project
 ```
 
 ---
 
-## Features
+## 功能特性
 
-### Editor
+### 编辑器
 
-The heart of OpenLoom. Powered by **Monaco Editor** — the same engine that drives VS Code.
+OpenLoom 的核心。基于 **Monaco Editor**——与 VS Code 同款引擎。
 
-- Syntax highlighting for 50+ languages
-- IntelliSense and auto-completion
-- Multiple tabs with dirty-state tracking
-- Catppuccin Mocha (dark) & Latte (light) themes
-- Ctrl+S to save
+- 支持 50+ 语言的语法高亮
+- IntelliSense 智能补全
+- 多标签页，支持未保存状态追踪
+- Catppuccin Mocha（深色）和 Latte（浅色）主题
+- Ctrl+S 保存
 
-### File Tree
+### 文件树
 
-Your project at a glance. Not just a viewer — a full file manager.
+不只是查看器，更是完整的文件管理器。
 
-- Right-click context menu: **New File**, **New Folder**, **Rename**, **Delete**
-- Inline input for creating and renaming — no popups, no friction
-- Auto-refresh on external file changes via WebSocket
-- Smart sorting: folders first, alphabetical
+- 右键菜单：**新建文件**、**新建文件夹**、**重命名**、**删除**
+- 行内输入，无弹窗干扰
+- 通过 WebSocket 自动刷新外部文件变更
+- 智能排序：文件夹优先，按字母排列
 
-### Terminal
+### 终端
 
-A real terminal, not a toy. Full PTY support via `node-pty`.
+真正的终端，通过 `node-pty` 提供完整 PTY 支持。
 
-- WebSocket-based real-time communication
-- xterm.js with WebGL rendering
-- Auto-fit to panel size
-- Web links detection and clickable URLs
+- 基于 WebSocket 的实时通信
+- xterm.js + WebGL 渲染
+- 自动适配面板大小
+- 链接检测，可点击 URL
 
-### Git Integration
+### Git 集成
 
-Git built into the sidebar. No more switching to terminal for basic operations.
+Git 内置于侧栏，无需再切换到终端执行基本操作。
 
-- File status overview (modified, added, deleted, untracked)
-- Stage / unstage individual files
-- Commit with message
-- Branch switching and creation
-- Commit history with visual graph
-- Commit diff viewer
+- 文件状态总览（已修改、已添加、已删除、未跟踪）
+- 单文件暂存 / 取消暂存
+- 提交并填写信息
+- 分支切换与创建
+- 提交历史可视化图
+- 提交 diff 查看器
+- AI 自动生成 commit message（支持 OpenAI 兼容 API）
 
-### Global Search (Ctrl+Shift+F)
+### 全局搜索（Ctrl+Shift+F）
 
-Find anything, anywhere in your project.
+在项目中搜索任何内容。
 
-- Full-text search across all project files
-- Results grouped by file with line numbers
-- Keyword highlighting in results
-- Click to jump directly to the file
+- 跨文件全文搜索
+- 按文件分组显示结果，附带行号
+- 关键词高亮
+- 点击直接跳转到对应文件
 
-### Quick Open (Ctrl+P)
+### 快速打开（Ctrl+P）
 
-Navigate your codebase at the speed of thought.
+快速导航代码库。
 
-- Fuzzy file name matching
-- Keyboard navigation (Arrow keys + Enter)
-- Matched characters highlighted
-- Top 20 results, instant filtering
+- 模糊文件名匹配
+- 键盘导航（方向键 + 回车）
+- 匹配字符高亮
+- 前 20 条结果，即时过滤
 
-### Diff Review
+### Diff 审查
 
-AI writes code. You decide what stays.
+AI 写代码，你来决定保留什么。
 
-- Side-by-side diff viewer
-- Accept or reject changes per file
-- Batch accept/reject all
-- Real-time file snapshot via WebSocket
-
----
-
-## Keyboard Shortcuts
-
-| Shortcut | Action |
-|----------|--------|
-| `Ctrl+S` | Save current file |
-| `Ctrl+P` | Quick open file |
-| `Ctrl+Shift+F` | Global search |
-| `Ctrl+B` | Toggle sidebar |
+- 并排 diff 查看器
+- 按文件接受或拒绝变更
+- 批量接受/拒绝全部
+- 通过 WebSocket 实时文件快照
 
 ---
 
-## Tech Stack
+## 快捷键
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | React 18, TypeScript, Tailwind CSS v4 |
-| Editor | Monaco Editor |
-| Terminal | xterm.js + node-pty |
-| State | Zustand |
-| Layout | react-resizable-panels |
-| Backend | Express, Node.js |
+| 快捷键 | 功能 |
+|--------|------|
+| `Ctrl+S` | 保存当前文件 |
+| `Ctrl+P` | 快速打开文件 |
+| `Ctrl+Shift+F` | 全局搜索 |
+| `Ctrl+B` | 切换侧栏 |
+
+---
+
+## 技术栈
+
+| 层级 | 技术 |
+|------|------|
+| 前端 | React 18, TypeScript, Tailwind CSS v4 |
+| 编辑器 | Monaco Editor |
+| 终端 | xterm.js + node-pty |
+| 状态管理 | Zustand |
+| 布局 | react-resizable-panels |
+| 后端 | Express, Node.js |
 | WebSocket | ws |
-| File Watch | chokidar |
+| 文件监听 | chokidar |
 | Monorepo | npm workspaces |
 
 ---
 
-## Project Structure
+## 项目结构
 
 ```
 openloom/
 ├── packages/
-│   ├── shared/          # Shared types & constants
-│   ├── backend/         # Express + WebSocket server
+│   ├── shared/          # 共享类型与常量
+│   ├── backend/         # Express + WebSocket 服务端
 │   │   └── src/
-│   │       ├── api/     # REST API routes
-│   │       ├── ws/      # WebSocket handlers
-│   │       ├── pty/     # Terminal PTY manager
-│   │       └── watcher/ # File system watcher
-│   └── frontend/        # React SPA
+│   │       ├── api/     # REST API 路由
+│   │       ├── ws/      # WebSocket 处理
+│   │       ├── pty/     # 终端 PTY 管理
+│   │       └── watcher/ # 文件系统监听
+│   └── frontend/        # React 单页应用
 │       └── src/
 │           ├── components/
-│           │   ├── editor/     # Monaco editor
-│           │   ├── filetree/   # File tree + context menu
-│           │   ├── git/        # Git panel + graph
-│           │   ├── layout/     # App shell + sidebar
-│           │   ├── search/     # Global search panel
-│           │   ├── quickopen/  # Quick open dialog
-│           │   ├── terminal/   # Terminal panel
-│           │   └── workspace/  # Folder browser
-│           ├── stores/         # Zustand state
-│           └── themes/         # Catppuccin themes
+│           │   ├── editor/     # Monaco 编辑器
+│           │   ├── filetree/   # 文件树 + 右键菜单
+│           │   ├── git/        # Git 面板 + 提交图
+│           │   ├── layout/     # 应用外壳 + 侧栏
+│           │   ├── search/     # 全局搜索面板
+│           │   ├── quickopen/  # 快速打开对话框
+│           │   ├── settings/   # 设置对话框
+│           │   ├── terminal/   # 终端面板
+│           │   └── workspace/  # 文件夹浏览器
+│           ├── stores/         # Zustand 状态管理
+│           └── themes/         # Catppuccin 主题
 └── package.json
 ```
 
 ---
 
-## Contributing
+## 参与贡献
 
-OpenLoom is open source and contributions are welcome.
+OpenLoom 是开源项目，欢迎贡献。
 
-1. Fork the repo
-2. Create your feature branch (`git checkout -b feat/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feat/amazing-feature`)
-5. Open a Pull Request
+1. Fork 本仓库
+2. 创建功能分支（`git checkout -b feat/amazing-feature`）
+3. 提交变更（`git commit -m 'feat: add amazing feature'`）
+4. 推送到分支（`git push origin feat/amazing-feature`）
+5. 发起 Pull Request
 
-**Guidelines:**
-- Keep PRs focused — one feature or fix per PR
-- Follow existing code style
-- Test your changes before submitting
+**贡献指南：**
+- 每个 PR 聚焦一个功能或修复
+- 遵循现有代码风格
+- 提交前请测试你的变更
 
 ---
 
-## License
+## 许可证
 
-MIT License. See [LICENSE](LICENSE) for details.
+MIT 许可证。详见 [LICENSE](LICENSE)。
 
 ---
 
