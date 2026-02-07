@@ -8,11 +8,30 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+[下载 Windows](https://github.com/q198132/OpenLoom/releases/latest) ·
+[下载 macOS](https://github.com/q198132/OpenLoom/releases/latest) ·
+[下载 Linux](https://github.com/q198132/OpenLoom/releases/latest)
+
 </div>
 
 ---
 
 > "AI 时代，你不需要一个什么都能做的 IDE。你只需要看清代码、管好提交，剩下的交给终端里的 AI。"
+
+---
+
+## 下载安装
+
+从 [GitHub Releases](https://github.com/q198132/OpenLoom/releases/latest) 下载对应平台的安装包：
+
+| 平台 | 文件 |
+|------|------|
+| Windows | `OpenLoom_x.x.x_x64-setup.exe` 或 `.msi` |
+| macOS (Apple Silicon) | `OpenLoom_x.x.x_aarch64.dmg` |
+| macOS (Intel) | `OpenLoom_x.x.x_x64.dmg` |
+| Linux | `.AppImage` 或 `.deb` |
+
+下载后双击安装，打开即可使用，无需任何额外配置。
 
 ---
 
@@ -58,40 +77,14 @@ OpenLoom                              → 看变更、审 Diff、提交 Git
 
 ## 目录
 
-- [环境要求](#环境要求)
-- [快速开始](#快速开始)
+- [下载安装](#下载安装)
 - [功能特性](#功能特性)
 - [快捷键](#快捷键)
 - [技术栈](#技术栈)
+- [从源码构建](#从源码构建)
 - [项目结构](#项目结构)
 - [参与贡献](#参与贡献)
 - [许可证](#许可证)
-
----
-
-## 环境要求
-
-- [Node.js](https://nodejs.org/) >= 18
-- [Rust](https://rustup.rs/) >= 1.70
-- [Git](https://git-scm.com/)
-- Windows: MSVC C++ 构建工具（通过 Visual Studio Installer 安装）
-
-## 快速开始
-
-```bash
-# 克隆仓库
-git clone https://github.com/your-username/openloom.git
-cd openloom
-
-# 安装前端依赖
-npm install
-
-# 开发模式（自动启动 Vite + Tauri）
-npm run tauri:dev
-
-# 生产构建（生成安装包）
-npm run tauri:build
-```
 
 ---
 
@@ -207,15 +200,46 @@ AI 写代码，你来决定保留什么。这正是 IDE/CLI 编程工具的核�
 
 | 层级 | 技术 |
 |------|------|
+| 桌面框架 | Tauri 2.0（Rust 后端 + 原生 WebView） |
 | 前端 | React 18, TypeScript, Tailwind CSS v4 |
 | 编辑器 | Monaco Editor |
-| 终端 | xterm.js + node-pty |
+| 终端 | xterm.js + portable-pty（Rust） |
 | 状态管理 | Zustand |
 | 布局 | react-resizable-panels |
-| 后端 | Express, Node.js |
-| WebSocket | ws |
-| 文件监听 | chokidar |
+| 文件监听 | notify + notify-debouncer-mini（Rust） |
+| Git 操作 | std::process::Command 调用 git CLI |
+| AI 请求 | reqwest（Rust HTTP 客户端） |
 | Monorepo | npm workspaces |
+
+---
+
+## 从源码构建
+
+> 以下仅面向开发者，普通用户请直接[下载安装包](#下载安装)。
+
+### 环境要求
+
+- [Node.js](https://nodejs.org/) >= 18
+- [Rust](https://rustup.rs/) >= 1.70
+- [Git](https://git-scm.com/)
+- Windows: MSVC C++ 构建工具（通过 Visual Studio Installer 安装）
+
+### 开发模式
+
+```bash
+git clone https://github.com/q198132/OpenLoom.git
+cd openloom
+npm install
+npm run tauri:dev
+```
+
+### 生产构建
+
+```bash
+npm run tauri:build
+```
+
+构建产物位于 `src-tauri/target/release/bundle/`。
 
 ---
 
@@ -223,16 +247,27 @@ AI 写代码，你来决定保留什么。这正是 IDE/CLI 编程工具的核�
 
 ```
 openloom/
+├── src-tauri/               # Tauri 2.0 Rust 后端
+│   ├── src/
+│   │   ├── commands/        # Tauri 命令（IPC 接口）
+│   │   │   ├── files.rs     # 文件操作（9 个命令）
+│   │   │   ├── git.rs       # Git 操作（12 个命令）
+│   │   │   ├── workspace.rs # 工作区管理
+│   │   │   ├── ai.rs        # AI 设置与生成
+│   │   │   └── pty.rs       # PTY 终端
+│   │   ├── state.rs         # 应用状态管理
+│   │   ├── watcher.rs       # 文件监听（notify）
+│   │   ├── pty.rs           # PTY 管理器（portable-pty）
+│   │   └── lib.rs           # 入口，注册命令与插件
+│   ├── capabilities/        # Tauri 权限配置
+│   ├── icons/               # 应用图标
+│   ├── Cargo.toml           # Rust 依赖
+│   └── tauri.conf.json      # Tauri 配置
 ├── packages/
-│   ├── shared/          # 共享类型与常量
-│   ├── backend/         # Express + WebSocket 服务端
-│   │   └── src/
-│   │       ├── api/     # REST API 路由
-│   │       ├── ws/      # WebSocket 处理
-│   │       ├── pty/     # 终端 PTY 管理
-│   │       └── watcher/ # 文件系统监听
-│   └── frontend/        # React 单页应用
+│   ├── shared/              # 共享类型与常量
+│   └── frontend/            # React 前端
 │       └── src/
+│           ├── lib/api.ts   # Tauri invoke 封装
 │           ├── components/
 │           │   ├── editor/     # Monaco 编辑器
 │           │   ├── filetree/   # 文件树 + 右键菜单
