@@ -14,10 +14,11 @@ async function git(...args: string[]): Promise<string> {
 // GET /api/git/status
 router.get('/status', async (_req, res) => {
   try {
-    const raw = await git('status', '--porcelain=v1');
-    const files = raw
+    // 不能用 git() 因为 trim() 会去掉行首空格，而 porcelain 格式中空格有意义
+    const { stdout } = await exec('git', ['status', '--porcelain=v1'], { cwd });
+    const files = stdout
       .split('\n')
-      .filter(Boolean)
+      .filter((l) => l.length >= 2)
       .map((line) => {
         const x = line[0]; // index status
         const y = line[1]; // worktree status

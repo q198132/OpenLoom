@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { GitBranch, RefreshCw } from 'lucide-react';
+import { GitBranch, RefreshCw, X } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import GitFileList from './GitFileList';
 import GitCommitBox from './GitCommitBox';
@@ -7,7 +7,7 @@ import GitActions from './GitActions';
 import GitGraph from './GitGraph';
 
 export default function GitPanel() {
-  const { branch, fetchStatus, fetchBranch, fetchLog } = useGitStore();
+  const { branch, error, clearError, fetchStatus, fetchBranch, fetchLog } = useGitStore();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -46,6 +46,16 @@ export default function GitPanel() {
       )}
 
       <GitCommitBox />
+
+      {error && (
+        <div className="flex items-start gap-1.5 px-3 py-1.5 bg-red/10 border-b border-red/20 text-xs text-red">
+          <span className="flex-1 break-all">{error}</span>
+          <button onClick={clearError} className="shrink-0 p-0.5 hover:bg-red/20 rounded">
+            <X size={12} />
+          </button>
+        </div>
+      )}
+
       <GitFileList />
       <GitActions />
       <GitGraph />
