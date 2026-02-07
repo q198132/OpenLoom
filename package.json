@@ -13,7 +13,9 @@
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:frontend": "npm run dev -w packages/frontend",
-    "dev:backend": "tsx watch packages/backend/src/index.ts"
+    "dev:backend": "tsx watch packages/backend/src/index.ts",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.0",

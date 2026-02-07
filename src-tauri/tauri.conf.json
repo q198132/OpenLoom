@@ -10,7 +10,6 @@
     "beforeBuildCommand": "npm run build -w packages/frontend"
   },
   "app": {
-    "title": "OpenLoom",
     "windows": [
       {
         "title": "OpenLoom",
