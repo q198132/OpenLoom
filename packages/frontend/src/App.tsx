@@ -3,7 +3,7 @@ import AppLayout from './components/layout/AppLayout';
 import { useControlSocket } from './hooks/useWebSocket';
 import { useDiffReviewStore } from './stores/diffReviewStore';
 import { useLayoutStore } from './stores/layoutStore';
-import type { ControlMessage } from '@claudegui/shared';
+import type { ControlMessage } from '@openloom/shared';
 
 export default function App() {
   const addReview = useDiffReviewStore((s) => s.addReview);

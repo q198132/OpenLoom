@@ -36,7 +36,7 @@ export default function TopBar() {
           {sidebarVisible ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         </button>
         <span className="text-sm font-semibold text-accent tracking-wide">
-          ClaudeGui
+          OpenLoom
         </span>
 
         {/* 项目选择器 */}

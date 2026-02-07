@@ -22,7 +22,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const res = await fetch('/api/workspace');
       const data = await res.json();
       set({ currentPath: data.path, projectName: data.projectName });
-      if (data.projectName) document.title = `${data.projectName} - ClaudeGui`;
+      if (data.projectName) document.title = `${data.projectName} - OpenLoom`;
     } catch { /* ignore */ }
   },
 

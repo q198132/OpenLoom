@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronRight, ChevronDown } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import { useEditorStore } from '@/stores/editorStore';
-import type { GitLogEntry } from '@claudegui/shared';
+import type { GitLogEntry } from '@openloom/shared';
 
 interface CommitDetail {
   hash: string;

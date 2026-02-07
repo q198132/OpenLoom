@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
-import { WS_CONTROL_PATH } from '@claudegui/shared';
-import type { ControlMessage } from '@claudegui/shared';
+import { WS_CONTROL_PATH } from '@openloom/shared';
+import type { ControlMessage } from '@openloom/shared';
 
 // 单例控制通道
 let ws: WebSocket | null = null;

@@ -5,7 +5,7 @@ import { useControlSocket } from '@/hooks/useWebSocket';
 import FileTreeItem from './FileTreeItem';
 import ContextMenu from './ContextMenu';
 import InlineInput from './InlineInput';
-import type { FileNode, ControlMessage } from '@claudegui/shared';
+import type { FileNode, ControlMessage } from '@openloom/shared';
 
 export default function FileTreePanel() {
   const { nodes, loading, refreshRoot, createFile, createDir, renameNode, deleteNode } = useFileTreeStore();

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
-import type { FileNode } from '@claudegui/shared';
+import type { FileNode } from '@openloom/shared';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
 import InlineInput from './InlineInput';
 

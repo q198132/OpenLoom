@@ -1,7 +1,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import type { Server } from 'http';
-import { WS_PTY_PATH, WS_CONTROL_PATH } from '@claudegui/shared';
-import type { ControlMessage } from '@claudegui/shared';
+import { WS_PTY_PATH, WS_CONTROL_PATH } from '@openloom/shared';
+import type { ControlMessage } from '@openloom/shared';
 import { PtyManager } from '../pty/ptyManager.js';
 
 export function setupWebSocket(server: Server, ptyManager: PtyManager) {

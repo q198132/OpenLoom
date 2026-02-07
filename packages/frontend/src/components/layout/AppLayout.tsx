@@ -7,7 +7,7 @@ import { useFileTreeStore } from '@/stores/fileTreeStore';
 import { useGitStore } from '@/stores/gitStore';
 import { useDiffReviewStore } from '@/stores/diffReviewStore';
 import { useControlSocket } from '@/hooks/useWebSocket';
-import type { ControlMessage } from '@claudegui/shared';
+import type { ControlMessage } from '@openloom/shared';
 import TopBar from './TopBar';
 import SidebarContainer from './SidebarContainer';
 import EditorPanel from '../editor/EditorPanel';
@@ -21,7 +21,7 @@ export default function AppLayout() {
   // 监听 WebSocket workspace-changed 消息
   const handleControlMessage = useCallback((msg: ControlMessage) => {
     if (msg.type === 'workspace-changed') {
-      document.title = `${msg.projectName} - ClaudeGui`;
+      document.title = `${msg.projectName} - OpenLoom`;
       useWorkspaceStore.getState().fetchWorkspace();
       useWorkspaceStore.getState().fetchRecent();
       useEditorStore.getState().clearAll();

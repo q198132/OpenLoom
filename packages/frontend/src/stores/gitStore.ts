@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GitFileStatus, GitLogEntry, GitBranchInfo } from '@claudegui/shared';
+import type { GitFileStatus, GitLogEntry, GitBranchInfo } from '@openloom/shared';
 
 interface GitState {
   files: GitFileStatus[];

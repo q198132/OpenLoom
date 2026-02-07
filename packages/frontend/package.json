@@ -1,5 +1,5 @@
 {
-  "name": "@claudegui/frontend",
+  "name": "@openloom/frontend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@claudegui/shared": "*",
+    "@openloom/shared": "*",
     "@monaco-editor/react": "^4.7.0",
     "@xterm/addon-attach": "^0.12.0",
     "@xterm/addon-fit": "^0.11.0",

@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
-import { DEFAULT_PORT, API_PREFIX } from '@claudegui/shared';
+import { DEFAULT_PORT, API_PREFIX } from '@openloom/shared';
 import { PtyManager } from './pty/ptyManager.js';
 import { setupWebSocket } from './ws/wsHandler.js';
 import fileRoutes from './api/fileRoutes.js';

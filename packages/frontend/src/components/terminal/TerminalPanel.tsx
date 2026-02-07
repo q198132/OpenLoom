@@ -5,7 +5,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { AttachAddon } from '@xterm/addon-attach';
 import '@xterm/xterm/css/xterm.css';
-import { WS_PTY_PATH } from '@claudegui/shared';
+import { WS_PTY_PATH } from '@openloom/shared';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { sendControlMessage } from '@/hooks/useWebSocket';

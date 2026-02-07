@@ -1,5 +1,5 @@
 {
-  "name": "@claudegui/backend",
+  "name": "@openloom/backend",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -7,7 +7,7 @@
     "dev": "tsx watch src/index.ts"
   },
   "dependencies": {
-    "@claudegui/shared": "*",
+    "@openloom/shared": "*",
     "chokidar": "^4.0.0",
     "cors": "^2.8.5",
     "express": "^4.21.0",

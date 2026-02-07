@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
-import { IGNORED_DIRS, IGNORED_FILES } from '@claudegui/shared';
-import type { FileNode } from '@claudegui/shared';
+import { IGNORED_DIRS, IGNORED_FILES } from '@openloom/shared';
+import type { FileNode } from '@openloom/shared';
 import { workspaceManager } from '../workspace/workspaceManager.js';
 
 const router = Router();

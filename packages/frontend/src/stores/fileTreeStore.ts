@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { FileNode } from '@claudegui/shared';
+import type { FileNode } from '@openloom/shared';
 
 interface FileTreeState {
   nodes: FileNode[];

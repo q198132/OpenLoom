@@ -1,8 +1,8 @@
 import chokidar from 'chokidar';
 import fs from 'fs/promises';
 import path from 'path';
-import { IGNORED_DIRS } from '@claudegui/shared';
-import type { ControlMessage } from '@claudegui/shared';
+import { IGNORED_DIRS } from '@openloom/shared';
+import type { ControlMessage } from '@openloom/shared';
 
 // 文件快照缓存（用于 Diff Review）
 const snapshotCache = new Map<string, string>();

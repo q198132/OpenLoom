@@ -26,7 +26,9 @@
       "Bash(timeout:*)",
       "Bash(git status:*)",
       "Bash(node -e:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(gh repo view:*)",
+      "Bash(gh search:*)"
     ]
   }
 }

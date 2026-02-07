@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { DiffReviewItem } from '@claudegui/shared';
+import type { DiffReviewItem } from '@openloom/shared';
 
 interface DiffReviewState {
   pendingReviews: DiffReviewItem[];

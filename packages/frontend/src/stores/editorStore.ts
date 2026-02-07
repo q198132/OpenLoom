@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { EditorTab } from '@claudegui/shared';
+import type { EditorTab } from '@openloom/shared';
 
 const EXT_LANG_MAP: Record<string, string> = {
   ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript',
