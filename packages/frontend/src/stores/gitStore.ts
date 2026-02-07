@@ -14,6 +14,7 @@ interface GitState {
   fetchBranch: () => Promise<void>;
   fetchLog: () => Promise<void>;
   stageFiles: (paths: string[]) => Promise<void>;
+  stageAll: () => Promise<void>;
   unstageFiles: (paths: string[]) => Promise<void>;
   commit: () => Promise<boolean>;
   push: () => Promise<boolean>;
@@ -60,6 +61,17 @@ export const useGitStore = create<GitState>((set, get) => ({
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ paths }),
+    });
+    await get().fetchStatus();
+  },
+
+  stageAll: async () => {
+    const unstaged = get().files.filter((f) => !f.staged).map((f) => f.path);
+    if (unstaged.length === 0) return;
+    await fetch('/api/git/stage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ paths: unstaged }),
     });
     await get().fetchStatus();
   },

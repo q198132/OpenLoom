@@ -1,10 +1,25 @@
+import { useState } from 'react';
 import { useGitStore } from '@/stores/gitStore';
 
 export default function GitCommitBox() {
-  const { commitMessage, setCommitMessage, commit } = useGitStore();
+  const { files, commitMessage, setCommitMessage, commit, stageAll } = useGitStore();
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const hasStagedFiles = files.some((f) => f.staged);
+  const hasUnstagedFiles = files.some((f) => !f.staged);
 
   const handleCommit = async () => {
     if (!commitMessage.trim()) return;
+    if (!hasStagedFiles && hasUnstagedFiles) {
+      setShowConfirm(true);
+      return;
+    }
+    await commit();
+  };
+
+  const handleConfirmStageAndCommit = async () => {
+    setShowConfirm(false);
+    await stageAll();
     await commit();
   };
 
@@ -28,6 +43,26 @@ export default function GitCommitBox() {
       >
         提交 (Ctrl+Enter)
       </button>
+
+      {showConfirm && (
+        <div className="mt-2 p-2 bg-surface0 rounded border border-surface1 text-xs text-subtext1">
+          <p>没有暂存的更改。是否暂存所有更改并提交？</p>
+          <div className="flex gap-1.5 mt-2">
+            <button
+              onClick={handleConfirmStageAndCommit}
+              className="flex-1 py-1 rounded bg-accent text-crust hover:bg-accent/80 font-medium transition-colors"
+            >
+              是
+            </button>
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="flex-1 py-1 rounded bg-surface1 text-subtext1 hover:bg-surface2 transition-colors"
+            >
+              否
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
