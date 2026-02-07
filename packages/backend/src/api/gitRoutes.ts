@@ -113,7 +113,7 @@ router.get('/show/:hash', async (req, res) => {
   try {
     const { hash } = req.params;
     const info = await git(
-      'show', '--stat', '--format=%H|%h|%s|%an|%ae|%ci|%b', hash,
+      'show', '--stat=999', '--format=%H|%h|%s|%an|%ae|%ci|%b', hash,
     );
     const lines = info.split('\n');
     const [fullHash, shortHash, subject, author, email, date, ...rest] = lines[0].split('|');
