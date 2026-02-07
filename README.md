@@ -16,6 +16,20 @@
 
 ---
 
+## 复制给 AI，一键部署
+
+把下面这段话发送给你的 AI 助手（Claude Code、OpenCode 等），即可自动部署：
+
+> 帮我克隆并部署 OpenLoom 项目。步骤如下：
+> 1. 克隆仓库：`git clone https://github.com/your-username/openloom.git`
+> 2. 进入目录：`cd openloom`
+> 3. 安装依赖：`npm install`
+> 4. 启动服务：`npm run dev`
+> 5. 确认 http://localhost:5173 可以正常访问
+> 6. （可选）执行 `npm link` 注册全局 CLI 命令 `openloom`
+
+---
+
 ## 什么是 OpenLoom？
 
 在 AI Coding 时代，Claude Code、OpenCode 等终端 AI 工具已经能帮你写代码、改 Bug、做重构。**你真正需要的不再是一个臃肿的全功能 IDE，而是一个轻量的界面来做两件事：看代码和管 Git。**
