@@ -39,7 +39,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   setSelected: (path) => set({ selectedPath: path }),
 
   refreshRoot: async () => {
-    set({ loading: true });
+    set({ loading: true, expandedPaths: new Set(), selectedPath: null });
     const nodes = await get().fetchChildren('');
     set({ nodes, loading: false });
   },

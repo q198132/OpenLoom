@@ -5,6 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useEditorStore } from '@/stores/editorStore';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
 import { useGitStore } from '@/stores/gitStore';
+import { useDiffReviewStore } from '@/stores/diffReviewStore';
 import { useControlSocket } from '@/hooks/useWebSocket';
 import type { ControlMessage } from '@claudegui/shared';
 import TopBar from './TopBar';
@@ -19,9 +20,11 @@ export default function AppLayout() {
   // 监听 WebSocket workspace-changed 消息
   const handleControlMessage = useCallback((msg: ControlMessage) => {
     if (msg.type === 'workspace-changed') {
+      document.title = `${msg.projectName} - ClaudeGui`;
       useWorkspaceStore.getState().fetchWorkspace();
       useWorkspaceStore.getState().fetchRecent();
       useEditorStore.getState().clearAll();
+      useDiffReviewStore.getState().acceptAll();
       useFileTreeStore.getState().refreshRoot();
       useGitStore.getState().fetchStatus();
       useGitStore.getState().fetchBranch();

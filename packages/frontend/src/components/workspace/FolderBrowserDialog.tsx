@@ -52,7 +52,8 @@ export default function FolderBrowserDialog() {
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleOpen();
+      // 回车导航到输入的路径，而非直接打开工作区
+      if (inputPath.trim()) browse(inputPath.trim());
     } else if (e.key === 'Escape') {
       setBrowserOpen(false);
     }

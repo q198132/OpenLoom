@@ -5,7 +5,7 @@ import { useWorkspaceStore } from '@/stores/workspaceStore';
 
 export default function TopBar() {
   const { sidebarVisible, toggleSidebar, theme, setTheme } = useLayoutStore();
-  const { projectName, recentProjects, fetchWorkspace, fetchRecent, openFolder, setBrowserOpen } = useWorkspaceStore();
+  const { projectName, currentPath, recentProjects, fetchWorkspace, fetchRecent, openFolder, setBrowserOpen } = useWorkspaceStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -66,14 +66,20 @@ export default function TopBar() {
                   <div className="px-3 py-1 text-xs text-subtext0">最近打开</div>
                   {recentProjects.map((p) => {
                     const name = p.split(/[/\\]/).pop() || p;
+                    const isCurrent = p === currentPath;
                     return (
                       <button
                         key={p}
-                        onClick={() => { openFolder(p); setDropdownOpen(false); }}
-                        className="w-full text-left px-3 py-1.5 text-sm text-subtext1 hover:bg-surface1 hover:text-text transition-colors truncate"
+                        onClick={() => { if (!isCurrent) openFolder(p); setDropdownOpen(false); }}
+                        className={`w-full text-left px-3 py-1.5 text-sm truncate transition-colors flex items-center gap-2 ${
+                          isCurrent
+                            ? 'text-accent bg-surface1/50 cursor-default'
+                            : 'text-subtext1 hover:bg-surface1 hover:text-text'
+                        }`}
                         title={p}
                       >
                         {name}
+                        {isCurrent && <span className="text-xs text-subtext0 ml-auto shrink-0">当前</span>}
                       </button>
                     );
                   })}
