@@ -88,6 +88,8 @@ openloom /path/to/your/project
 
 ## 功能特性
 
+![主界面](docs/screenshots/main-interface.png)
+
 ### 编辑器
 
 OpenLoom 的核心。基于 **Monaco Editor** —— VS Code 同款引擎。
@@ -101,6 +103,8 @@ OpenLoom 的核心。基于 **Monaco Editor** —— VS Code 同款引擎。
 ### 文件树
 
 一目了然的项目结构，不只是查看器 —— 更是完整的文件管理器。
+
+![文件树右键菜单](docs/screenshots/file-context-menu.png)
 
 - 右键菜单：**新建文件**、**新建文件夹**、**重命名**、**删除**
 - 内联输入框，无弹窗，零摩擦
@@ -153,6 +157,26 @@ AI 写代码，你来决定留什么。
 - 逐文件接受或拒绝变更
 - 批量接受 / 拒绝全部
 - 基于 WebSocket 的实时文件快照
+
+### AI 设置
+
+一键配置 AI 服务，让 Git 提交信息自动生成。
+
+![AI 设置](docs/screenshots/ai-settings.png)
+
+- 支持任何 OpenAI 兼容 API（OpenAI、DeepSeek、Ollama 等）
+- 配置 Base URL、API Key、Model
+- 基于暂存区 diff 自动生成语义化 commit message
+
+### 工作区切换
+
+项目间无缝跳转，多项目开发不再手忙脚乱。
+
+![工作区切换](docs/screenshots/workspace-switcher.png)
+
+- 快速打开文件夹
+- 最近打开项目列表
+- 一键切换工作区
 
 ---
 
