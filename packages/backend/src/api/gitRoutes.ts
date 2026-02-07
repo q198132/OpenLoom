@@ -166,6 +166,36 @@ router.get('/file-diff/:hash', async (req, res) => {
   }
 });
 
+// GET /api/git/staged-diff — 获取暂存区 diff 摘要
+router.get('/staged-diff', async (_req, res) => {
+  try {
+    const stat = await git('diff', '--cached', '--stat');
+    const { stdout: diffRaw } = await exec('git', ['diff', '--cached'], {
+      cwd: getCwd(),
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    // 截断过长的 diff（最多 30KB）
+    const maxLen = 30 * 1024;
+    const diff = diffRaw.length > maxLen
+      ? diffRaw.slice(0, maxLen) + '\n... [diff truncated]'
+      : diffRaw;
+
+    // 解析文件列表
+    const statusOut = await git('diff', '--cached', '--name-status');
+    const files = statusOut
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const parts = line.split('\t');
+        return { status: parts[0], path: parts.slice(1).join('\t') };
+      });
+
+    res.json({ stat, diff, files });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // POST /api/git/push
 router.post('/push', async (_req, res) => {
   try {

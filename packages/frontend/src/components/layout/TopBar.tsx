@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { PanelLeftClose, PanelLeftOpen, Sun, Moon, FolderOpen, ChevronDown } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Sun, Moon, FolderOpen, ChevronDown, Settings } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 
 export default function TopBar() {
-  const { sidebarVisible, toggleSidebar, theme, setTheme } = useLayoutStore();
+  const { sidebarVisible, toggleSidebar, theme, setTheme, toggleSettings } = useLayoutStore();
   const { projectName, currentPath, recentProjects, fetchWorkspace, fetchRecent, openFolder, setBrowserOpen } = useWorkspaceStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -90,6 +90,13 @@ export default function TopBar() {
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <button
+          onClick={toggleSettings}
+          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"
+          title="设置"
+        >
+          <Settings size={18} />
+        </button>
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"

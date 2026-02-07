@@ -7,10 +7,12 @@ interface LayoutState {
   sidebarTab: SidebarTab;
   theme: 'dark' | 'light';
   quickOpenVisible: boolean;
+  settingsVisible: boolean;
   toggleSidebar: () => void;
   setSidebarTab: (tab: SidebarTab) => void;
   setTheme: (theme: 'dark' | 'light') => void;
   toggleQuickOpen: () => void;
+  toggleSettings: () => void;
 }
 
 export const useLayoutStore = create<LayoutState>((set) => ({
@@ -18,8 +20,10 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   sidebarTab: 'files',
   theme: 'dark',
   quickOpenVisible: false,
+  settingsVisible: false,
   toggleSidebar: () => set((s) => ({ sidebarVisible: !s.sidebarVisible })),
   setSidebarTab: (sidebarTab) => set({ sidebarTab }),
   setTheme: (theme) => set({ theme }),
   toggleQuickOpen: () => set((s) => ({ quickOpenVisible: !s.quickOpenVisible })),
+  toggleSettings: () => set((s) => ({ settingsVisible: !s.settingsVisible })),
 }));

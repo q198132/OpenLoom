@@ -14,6 +14,7 @@ import EditorPanel from '../editor/EditorPanel';
 import TerminalPanel from '../terminal/TerminalPanel';
 import FolderBrowserDialog from '../workspace/FolderBrowserDialog';
 import QuickOpenDialog from '../quickopen/QuickOpenDialog';
+import SettingsDialog from '../settings/SettingsDialog';
 
 export default function AppLayout() {
   const sidebarVisible = useLayoutStore((s) => s.sidebarVisible);
@@ -89,6 +90,7 @@ export default function AppLayout() {
       </PanelGroup>
       <FolderBrowserDialog />
       <QuickOpenDialog />
+      <SettingsDialog />
     </div>
   );
 }
