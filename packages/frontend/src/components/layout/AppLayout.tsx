@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
@@ -13,6 +13,7 @@ import SidebarContainer from './SidebarContainer';
 import EditorPanel from '../editor/EditorPanel';
 import TerminalPanel from '../terminal/TerminalPanel';
 import FolderBrowserDialog from '../workspace/FolderBrowserDialog';
+import QuickOpenDialog from '../quickopen/QuickOpenDialog';
 
 export default function AppLayout() {
   const sidebarVisible = useLayoutStore((s) => s.sidebarVisible);
@@ -33,6 +34,18 @@ export default function AppLayout() {
   }, []);
 
   useControlSocket(handleControlMessage);
+
+  // Ctrl+P 快速打开文件
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        useLayoutStore.getState().toggleQuickOpen();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   return (
     <div className="flex flex-col h-full">
@@ -75,6 +88,7 @@ export default function AppLayout() {
         </Panel>
       </PanelGroup>
       <FolderBrowserDialog />
+      <QuickOpenDialog />
     </div>
   );
 }

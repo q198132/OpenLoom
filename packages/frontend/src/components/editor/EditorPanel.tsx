@@ -52,6 +52,20 @@ export default function EditorPanel() {
     return () => window.removeEventListener('keydown', handler);
   }, [activeTab, fileContents]);
 
+  // Ctrl+Shift+F 全局搜索
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+        e.preventDefault();
+        const layout = useLayoutStore.getState();
+        layout.setSidebarTab('search');
+        if (!layout.sidebarVisible) layout.toggleSidebar();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const handleMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;

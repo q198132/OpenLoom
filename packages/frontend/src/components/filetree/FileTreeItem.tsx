@@ -2,14 +2,26 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
 import type { FileNode } from '@claudegui/shared';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
+import InlineInput from './InlineInput';
 
 interface Props {
   node: FileNode;
   depth: number;
   onFileClick: (path: string) => void;
+  onContextMenu?: (e: React.MouseEvent, node: FileNode) => void;
+  renamingPath?: string | null;
+  creatingIn?: string | null;
+  creatingType?: 'file' | 'folder' | null;
+  onRenameConfirm?: (oldPath: string, newName: string) => void;
+  onCreateConfirm?: (parentDir: string, name: string) => void;
+  onEditCancel?: () => void;
 }
 
-export default function FileTreeItem({ node, depth, onFileClick }: Props) {
+export default function FileTreeItem({
+  node, depth, onFileClick, onContextMenu,
+  renamingPath, creatingIn, creatingType,
+  onRenameConfirm, onCreateConfirm, onEditCancel,
+}: Props) {
   const { expandedPaths, toggleExpand, selectedPath, setSelected, fetchChildren } =
     useFileTreeStore();
   const [children, setChildren] = useState<FileNode[]>([]);
@@ -58,6 +70,7 @@ export default function FileTreeItem({ node, depth, onFileClick }: Props) {
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
+        onContextMenu={(e) => onContextMenu?.(e, node)}
       >
         {node.isDirectory ? (
           <>
@@ -78,17 +91,40 @@ export default function FileTreeItem({ node, depth, onFileClick }: Props) {
             <File size={14} className="shrink-0 mr-1.5 text-overlay1" />
           </>
         )}
-        <span className="text-xs truncate">{node.name}</span>
+        {renamingPath === node.path ? (
+          <InlineInput
+            defaultValue={node.name}
+            depth={0}
+            onConfirm={(newName) => onRenameConfirm?.(node.path, newName)}
+            onCancel={() => onEditCancel?.()}
+          />
+        ) : (
+          <span className="text-xs truncate">{node.name}</span>
+        )}
       </div>
 
       {isExpanded && node.isDirectory && (
         <div>
+          {creatingIn === node.path && creatingType && (
+            <InlineInput
+              depth={depth + 1}
+              onConfirm={(name) => onCreateConfirm?.(node.path, name)}
+              onCancel={() => onEditCancel?.()}
+            />
+          )}
           {children.map((child) => (
             <FileTreeItem
               key={child.path}
               node={child}
               depth={depth + 1}
               onFileClick={onFileClick}
+              onContextMenu={onContextMenu}
+              renamingPath={renamingPath}
+              creatingIn={creatingIn}
+              creatingType={creatingType}
+              onRenameConfirm={onRenameConfirm}
+              onCreateConfirm={onCreateConfirm}
+              onEditCancel={onEditCancel}
             />
           ))}
         </div>

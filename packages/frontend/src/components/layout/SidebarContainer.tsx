@@ -1,7 +1,8 @@
-import { FolderTree, GitBranch } from 'lucide-react';
+import { FolderTree, GitBranch, Search } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import FileTreePanel from '../filetree/FileTreePanel';
 import GitPanel from '../git/GitPanel';
+import SearchPanel from '../search/SearchPanel';
 
 function SidebarIcon({
   active,
@@ -50,12 +51,20 @@ export default function SidebarContainer() {
         >
           <GitBranch size={18} />
         </SidebarIcon>
+        <SidebarIcon
+          active={sidebarTab === 'search'}
+          onClick={() => setSidebarTab('search')}
+          title="搜索"
+        >
+          <Search size={18} />
+        </SidebarIcon>
       </div>
 
       {/* 面板内容 */}
       <div className="flex-1 overflow-hidden">
         {sidebarTab === 'files' && <FileTreePanel />}
         {sidebarTab === 'git' && <GitPanel />}
+        {sidebarTab === 'search' && <SearchPanel />}
       </div>
     </div>
   );
