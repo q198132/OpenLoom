@@ -3,20 +3,22 @@ import fs from 'fs/promises';
 import path from 'path';
 import { IGNORED_DIRS, IGNORED_FILES } from '@claudegui/shared';
 import type { FileNode } from '@claudegui/shared';
+import { workspaceManager } from '../workspace/workspaceManager.js';
 
 const router = Router();
 
-// 项目根目录（通过环境变量或命令行参数指定）
-const rootDir = process.env.PROJECT_ROOT || process.cwd();
+function getRootDir(): string {
+  return workspaceManager.getRoot();
+}
 
 // 路径安全校验
 function isPathSafe(targetPath: string): boolean {
   const resolved = path.resolve(targetPath);
-  return resolved.startsWith(rootDir);
+  return resolved.startsWith(getRootDir());
 }
 
 function safePath(relativePath: string): string {
-  const full = path.join(rootDir, relativePath);
+  const full = path.join(getRootDir(), relativePath);
   if (!isPathSafe(full)) {
     throw new Error('Path traversal detected');
   }
@@ -84,4 +86,3 @@ router.put('/write', async (req, res) => {
 });
 
 export default router;
-export { rootDir };

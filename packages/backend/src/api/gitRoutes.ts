@@ -1,13 +1,17 @@
 import { Router } from 'express';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { workspaceManager } from '../workspace/workspaceManager.js';
 
 const exec = promisify(execFile);
 const router = Router();
-const cwd = process.env.PROJECT_ROOT || process.cwd();
+
+function getCwd(): string {
+  return workspaceManager.getRoot();
+}
 
 async function git(...args: string[]): Promise<string> {
-  const { stdout } = await exec('git', args, { cwd, maxBuffer: 1024 * 1024 });
+  const { stdout } = await exec('git', args, { cwd: getCwd(), maxBuffer: 1024 * 1024 });
   return stdout.trim();
 }
 
@@ -15,7 +19,7 @@ async function git(...args: string[]): Promise<string> {
 router.get('/status', async (_req, res) => {
   try {
     // 不能用 git() 因为 trim() 会去掉行首空格，而 porcelain 格式中空格有意义
-    const { stdout } = await exec('git', ['status', '--porcelain=v1'], { cwd });
+    const { stdout } = await exec('git', ['status', '--porcelain=v1'], { cwd: getCwd() });
     const files = stdout
       .split('\n')
       .filter((l) => l.length >= 2)
@@ -204,7 +208,7 @@ router.get('/working-diff', async (req, res) => {
       const fs = await import('fs/promises');
       const path = await import('path');
       try {
-        newContent = await fs.readFile(path.join(cwd, file), 'utf-8');
+        newContent = await fs.readFile(path.join(getCwd(), file), 'utf-8');
       } catch { /* 删除的文件 */ }
     }
 

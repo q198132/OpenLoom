@@ -14,7 +14,8 @@ export type ControlMessage =
   | { type: 'diff-accept'; path: string }
   | { type: 'diff-reject'; path: string }
   | { type: 'diff-accept-all' }
-  | { type: 'diff-reject-all' };
+  | { type: 'diff-reject-all' }
+  | { type: 'workspace-changed'; path: string; projectName: string };
 
 // Diff 审核项
 export interface DiffReviewItem {

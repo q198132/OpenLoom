@@ -4,9 +4,11 @@ import { createServer } from 'http';
 import { DEFAULT_PORT, API_PREFIX } from '@claudegui/shared';
 import { PtyManager } from './pty/ptyManager.js';
 import { setupWebSocket } from './ws/wsHandler.js';
-import fileRoutes, { rootDir } from './api/fileRoutes.js';
+import fileRoutes from './api/fileRoutes.js';
 import gitRoutes from './api/gitRoutes.js';
+import workspaceRoutes from './api/workspaceRoutes.js';
 import { startFileWatcher } from './watcher/fileWatcher.js';
+import { workspaceManager } from './workspace/workspaceManager.js';
 
 const app = express();
 app.use(cors());
@@ -23,6 +25,9 @@ app.use(`${API_PREFIX}/files`, fileRoutes);
 // Git API
 app.use(`${API_PREFIX}/git`, gitRoutes);
 
+// 工作区 API
+app.use(`${API_PREFIX}/workspace`, workspaceRoutes);
+
 const server = createServer(app);
 const ptyManager = new PtyManager();
 
@@ -34,8 +39,33 @@ console.log(`[pty] spawned, pid: ${ptyManager.pid}`);
 const { broadcast } = setupWebSocket(server, ptyManager);
 
 // 启动文件监听
-startFileWatcher(rootDir, broadcast);
-console.log(`[watcher] watching ${rootDir}`);
+const initialRoot = workspaceManager.getRoot();
+let currentWatcher = startFileWatcher(initialRoot, broadcast);
+console.log(`[watcher] watching ${initialRoot}`);
+
+// 工作区切换回调
+workspaceManager.onChange((newRoot) => {
+  // 停止旧 watcher
+  currentWatcher.watcher.close();
+  currentWatcher.snapshotCache.clear();
+
+  // 启动新 watcher
+  currentWatcher = startFileWatcher(newRoot, broadcast);
+  console.log(`[watcher] switched to ${newRoot}`);
+
+  // 终端发送 cd 命令
+  const cdCmd = process.platform === 'win32'
+    ? `cd "${newRoot}"\r`
+    : `cd "${newRoot}"\n`;
+  ptyManager.write(cdCmd);
+
+  // 广播工作区切换消息
+  broadcast({
+    type: 'workspace-changed',
+    path: newRoot,
+    projectName: workspaceManager.getProjectName(),
+  });
+});
 
 // 导出供后续模块使用
 export { app, broadcast, ptyManager };

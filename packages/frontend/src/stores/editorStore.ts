@@ -36,6 +36,7 @@ interface EditorState {
   openCommitDiff: (hash: string, shortHash: string, file: string) => Promise<void>;
   openWorkingDiff: (file: string, staged: boolean) => Promise<void>;
   closeCommitDiff: () => void;
+  clearAll: () => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -137,4 +138,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   closeCommitDiff: () => set({ commitDiff: null }),
+
+  clearAll: () => set({
+    tabs: [],
+    activeTab: null,
+    fileContents: new Map(),
+    commitDiff: null,
+  }),
 }));

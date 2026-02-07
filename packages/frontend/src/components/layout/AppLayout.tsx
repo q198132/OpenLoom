@@ -1,12 +1,35 @@
+import { useCallback } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useEditorStore } from '@/stores/editorStore';
+import { useFileTreeStore } from '@/stores/fileTreeStore';
+import { useGitStore } from '@/stores/gitStore';
+import { useControlSocket } from '@/hooks/useWebSocket';
+import type { ControlMessage } from '@claudegui/shared';
 import TopBar from './TopBar';
 import SidebarContainer from './SidebarContainer';
 import EditorPanel from '../editor/EditorPanel';
 import TerminalPanel from '../terminal/TerminalPanel';
+import FolderBrowserDialog from '../workspace/FolderBrowserDialog';
 
 export default function AppLayout() {
   const sidebarVisible = useLayoutStore((s) => s.sidebarVisible);
+
+  // 监听 WebSocket workspace-changed 消息
+  const handleControlMessage = useCallback((msg: ControlMessage) => {
+    if (msg.type === 'workspace-changed') {
+      useWorkspaceStore.getState().fetchWorkspace();
+      useWorkspaceStore.getState().fetchRecent();
+      useEditorStore.getState().clearAll();
+      useFileTreeStore.getState().refreshRoot();
+      useGitStore.getState().fetchStatus();
+      useGitStore.getState().fetchBranch();
+      useGitStore.getState().fetchLog();
+    }
+  }, []);
+
+  useControlSocket(handleControlMessage);
 
   return (
     <div className="flex flex-col h-full">
@@ -48,6 +71,7 @@ export default function AppLayout() {
           </PanelGroup>
         </Panel>
       </PanelGroup>
+      <FolderBrowserDialog />
     </div>
   );
 }
