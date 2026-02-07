@@ -133,3 +133,93 @@ AI writes code. You decide what stays.
 - Accept or reject changes per file
 - Batch accept/reject all
 - Real-time file snapshot via WebSocket
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Ctrl+S` | Save current file |
+| `Ctrl+P` | Quick open file |
+| `Ctrl+Shift+F` | Global search |
+| `Ctrl+B` | Toggle sidebar |
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, TypeScript, Tailwind CSS v4 |
+| Editor | Monaco Editor |
+| Terminal | xterm.js + node-pty |
+| State | Zustand |
+| Layout | react-resizable-panels |
+| Backend | Express, Node.js |
+| WebSocket | ws |
+| File Watch | chokidar |
+| Monorepo | npm workspaces |
+
+---
+
+## Project Structure
+
+```
+openloom/
+├── packages/
+│   ├── shared/          # Shared types & constants
+│   ├── backend/         # Express + WebSocket server
+│   │   └── src/
+│   │       ├── api/     # REST API routes
+│   │       ├── ws/      # WebSocket handlers
+│   │       ├── pty/     # Terminal PTY manager
+│   │       └── watcher/ # File system watcher
+│   └── frontend/        # React SPA
+│       └── src/
+│           ├── components/
+│           │   ├── editor/     # Monaco editor
+│           │   ├── filetree/   # File tree + context menu
+│           │   ├── git/        # Git panel + graph
+│           │   ├── layout/     # App shell + sidebar
+│           │   ├── search/     # Global search panel
+│           │   ├── quickopen/  # Quick open dialog
+│           │   ├── terminal/   # Terminal panel
+│           │   └── workspace/  # Folder browser
+│           ├── stores/         # Zustand state
+│           └── themes/         # Catppuccin themes
+└── package.json
+```
+
+---
+
+## Contributing
+
+OpenLoom is open source and contributions are welcome.
+
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feat/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feat/amazing-feature`)
+5. Open a Pull Request
+
+**Guidelines:**
+- Keep PRs focused — one feature or fix per PR
+- Follow existing code style
+- Test your changes before submitting
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**OpenLoom** — Weave your code, thread by thread.
+
+Built with passion. Open by nature.
+
+</div>
