@@ -31,6 +31,7 @@ No Electron. No bloat. Just a Node.js backend and a React frontend, woven togeth
 - **Global search** (Ctrl+Shift+F) — search across all project files
 - **Quick open** (Ctrl+P) — fuzzy-find any file instantly
 - **Diff review** — review AI-generated changes before accepting
+- **AI Commit Message** — auto-generate semantic commit messages from staged diff
 - **Dark/Light themes** — Catppuccin Mocha & Latte built-in
 - **Workspace switching** — jump between projects seamlessly
 

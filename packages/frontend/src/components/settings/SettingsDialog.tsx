@@ -58,6 +58,10 @@ export default function SettingsDialog() {
 
         {/* 表单 */}
         <div className="px-4 py-3 space-y-3 overflow-y-auto">
+          <p className="text-xs text-subtext0 leading-relaxed">
+            配置 AI 服务后，可在 Git 提交框中点击「生成」按钮，基于暂存区 diff 自动生成语义化的 commit message。支持任何 OpenAI 兼容 API（如 OpenAI、DeepSeek、Ollama 等）。未配置时将使用基于规则的简单摘要。
+          </p>
+
           <Field label="Base URL">
             <input
               type="text"
