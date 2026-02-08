@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -64,8 +64,28 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
+  const [dragging, setDragging] = useState(false);
   const setConnected = useTerminalStore((s) => s.setConnected);
   const theme = useLayoutStore((s) => s.theme);
+
+  // 全局拖拽检测：window 级别监听，避免 xterm canvas 拦截事件
+  useEffect(() => {
+    let counter = 0;
+    const onDragEnter = () => { counter++; setDragging(true); };
+    const onDragLeave = () => { counter--; if (counter <= 0) { counter = 0; setDragging(false); } };
+    const onDrop = () => { counter = 0; setDragging(false); };
+    const onDragEnd = () => { counter = 0; setDragging(false); };
+    window.addEventListener('dragenter', onDragEnter);
+    window.addEventListener('dragleave', onDragLeave);
+    window.addEventListener('drop', onDrop);
+    window.addEventListener('dragend', onDragEnd);
+    return () => {
+      window.removeEventListener('dragenter', onDragEnter);
+      window.removeEventListener('dragleave', onDragLeave);
+      window.removeEventListener('drop', onDrop);
+      window.removeEventListener('dragend', onDragEnd);
+    };
+  }, []);
 
   // 初始化 xterm 实例并连接 PTY
   useEffect(() => {
@@ -178,13 +198,14 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     }
   }, [visible]);
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleOverlayDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleOverlayDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    setDragging(false);
     const filePath = e.dataTransfer.getData('text/plain');
     if (filePath) {
       api.ptyWrite(id, filePath).catch(() => {});
@@ -193,11 +214,19 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
   return (
     <div
-      ref={containerRef}
       className="absolute inset-0 overflow-hidden"
       style={{ display: visible ? 'block' : 'none' }}
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    />
+    >
+      <div ref={containerRef} className="h-full w-full" />
+      {dragging && visible && (
+        <div
+          className="absolute inset-0 z-50 bg-accent/10 border-2 border-dashed border-accent flex items-center justify-center"
+          onDragOver={handleOverlayDragOver}
+          onDrop={handleOverlayDrop}
+        >
+          <span className="text-accent text-sm font-medium">释放以粘贴文件路径</span>
+        </div>
+      )}
+    </div>
   );
 }
