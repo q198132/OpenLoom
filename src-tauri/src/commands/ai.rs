@@ -94,24 +94,36 @@ pub async fn generate_commit_message(
         return Err("No API Key configured".into());
     }
 
-    let url = format!(
-        "{}/v1/chat/completions",
-        settings.base_url.trim_end_matches('/')
-    );
+    let base = settings.base_url.trim_end_matches('/');
+    // 如果 base_url 已经包含路径（如 /api/v3），直接拼接 /chat/completions
+    // 否则按 OpenAI 标准拼接 /v1/chat/completions
+    let url = if base.ends_with("/v1") || base.contains("/api/") {
+        format!("{}/chat/completions", base)
+    } else {
+        format!("{}/v1/chat/completions", base)
+    };
+
+    // 截断过长的 diff，避免超出 token 限制
+    let max_diff_len = 8000;
+    let truncated_diff = if diff.len() > max_diff_len {
+        format!("{}...\n[diff truncated]", &diff[..max_diff_len])
+    } else {
+        diff.clone()
+    };
 
     let body = serde_json::json!({
         "model": settings.model,
         "messages": [
             {
                 "role": "system",
-                "content": "You are a commit message generator. Based on the git diff provided, generate a concise and descriptive commit message following the Conventional Commits format (e.g., feat:, fix:, refactor:, docs:, chore:). Reply with ONLY the commit message, no explanation."
+                "content": "You are an expert commit message generator. Generate a high-quality commit message based on the provided git diff.\n\nRules:\n1. Use Conventional Commits format: <type>(<scope>): <subject>\n2. Types: feat, fix, refactor, docs, style, test, chore, perf, ci, build\n3. Scope should be the module/component affected (optional but preferred)\n4. Subject line: imperative mood, lowercase, no period, max 72 chars\n5. If changes are significant, add a blank line then a body with bullet points explaining key changes\n6. Body bullets should start with '- ' and explain WHY, not just WHAT\n7. If multiple unrelated changes exist, focus on the most important one for the subject\n8. Use Chinese for the commit message body if the code comments or file names suggest a Chinese project\n\nReply with ONLY the commit message, nothing else."
             },
             {
                 "role": "user",
-                "content": format!("Here is the git diff stat:\n{}\n\nHere is the diff:\n{}", stat, diff)
+                "content": format!("Git diff stat:\n{}\n\nDiff content:\n{}", stat, truncated_diff)
             }
         ],
-        "max_tokens": 200,
+        "max_tokens": 500,
         "temperature": 0.3,
     });
 
