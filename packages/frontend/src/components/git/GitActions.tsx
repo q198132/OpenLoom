@@ -20,7 +20,7 @@ export default function GitActions() {
   };
 
   return (
-    <div className="flex items-center gap-1.5 px-3 py-2 border-t border-surface0">
+    <div className="flex items-center gap-1.5">
       <button
         onClick={handlePull}
         disabled={pulling}

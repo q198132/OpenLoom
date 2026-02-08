@@ -6,3 +6,4 @@ dist/
 .DS_Store
 *.local.json
 src-tauri/target/
+.openloom/

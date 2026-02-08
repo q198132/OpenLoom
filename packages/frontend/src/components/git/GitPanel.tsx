@@ -40,8 +40,9 @@ export default function GitPanel() {
       </div>
 
       {branch && (
-        <div className="px-3 py-1.5 text-xs text-subtext0 border-b border-surface0">
-          分支: <span className="text-accent">{branch.current}</span>
+        <div className="flex items-center justify-between px-3 py-1.5 text-xs text-subtext0 border-b border-surface0">
+          <span>分支: <span className="text-accent">{branch.current}</span></span>
+          <GitActions />
         </div>
       )}
 
@@ -57,7 +58,6 @@ export default function GitPanel() {
       )}
 
       <GitFileList />
-      <GitActions />
       <GitGraph />
     </div>
   );

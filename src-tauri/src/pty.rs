@@ -1,31 +1,41 @@
 use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
+use std::collections::HashMap;
 use std::io::{Read, Write};
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter};
 
+struct PtyInstance {
+    writer: Box<dyn Write + Send>,
+    master: Box<dyn MasterPty + Send>,
+}
+
+#[derive(Clone, serde::Serialize)]
+pub struct PtyOutputPayload {
+    pub id: u32,
+    pub data: String,
+}
+
+#[derive(Clone, serde::Serialize)]
+pub struct PtyExitPayload {
+    pub id: u32,
+}
+
 pub struct PtyManager {
-    writer: Mutex<Option<Box<dyn Write + Send>>>,
-    master: Mutex<Option<Box<dyn MasterPty + Send>>>,
-    alive: Mutex<bool>,
+    instances: Mutex<HashMap<u32, PtyInstance>>,
+    next_id: AtomicU32,
 }
 
 impl PtyManager {
     pub fn new() -> Self {
         Self {
-            writer: Mutex::new(None),
-            master: Mutex::new(None),
-            alive: Mutex::new(false),
+            instances: Mutex::new(HashMap::new()),
+            next_id: AtomicU32::new(1),
         }
     }
 
-    pub fn is_alive(&self) -> bool {
-        *self.alive.lock().unwrap()
-    }
-
-    pub fn spawn(&self, app: AppHandle, cwd: String) -> Result<(), String> {
-        if self.is_alive() {
-            return Ok(());
-        }
+    pub fn spawn(&self, app: AppHandle, cwd: String) -> Result<u32, String> {
+        let id = self.next_id.fetch_add(1, Ordering::SeqCst);
 
         let pty_system = native_pty_system();
         let pair = pty_system
@@ -46,11 +56,14 @@ impl PtyManager {
         let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
         let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
 
-        *self.writer.lock().unwrap() = Some(writer);
-        *self.master.lock().unwrap() = Some(pair.master);
-        *self.alive.lock().unwrap() = true;
+        let instance = PtyInstance {
+            writer,
+            master: pair.master,
+        };
 
-        // 读取线程：PTY 输出 → Tauri 事件
+        self.instances.lock().unwrap().insert(id, instance);
+
+        // 读取线程：PTY 输出 → Tauri 事件（带 id）
         let app_clone = app.clone();
         std::thread::spawn(move || {
             let mut buf = [0u8; 4096];
@@ -59,31 +72,33 @@ impl PtyManager {
                     Ok(0) => break,
                     Ok(n) => {
                         let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                        let _ = app_clone.emit("pty-output", &data);
+                        let _ = app_clone.emit("pty-output", PtyOutputPayload { id, data });
                     }
                     Err(_) => break,
                 }
             }
+            // PTY 进程退出
+            let _ = app_clone.emit("pty-exit", PtyExitPayload { id });
         });
 
-        Ok(())
+        Ok(id)
     }
 
-    pub fn write_input(&self, data: &str) -> Result<(), String> {
-        let mut guard = self.writer.lock().unwrap();
-        if let Some(ref mut w) = *guard {
-            w.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
-            w.flush().map_err(|e| e.to_string())?;
+    pub fn write_input(&self, id: u32, data: &str) -> Result<(), String> {
+        let mut guard = self.instances.lock().unwrap();
+        if let Some(inst) = guard.get_mut(&id) {
+            inst.writer.write_all(data.as_bytes()).map_err(|e| e.to_string())?;
+            inst.writer.flush().map_err(|e| e.to_string())?;
             Ok(())
         } else {
-            Err("PTY not started".into())
+            Err(format!("PTY {} not found", id))
         }
     }
 
-    pub fn resize(&self, cols: u16, rows: u16) -> Result<(), String> {
-        let guard = self.master.lock().unwrap();
-        if let Some(ref master) = *guard {
-            master
+    pub fn resize(&self, id: u32, cols: u16, rows: u16) -> Result<(), String> {
+        let guard = self.instances.lock().unwrap();
+        if let Some(inst) = guard.get(&id) {
+            inst.master
                 .resize(PtySize {
                     rows,
                     cols,
@@ -93,7 +108,16 @@ impl PtyManager {
                 .map_err(|e| e.to_string())?;
             Ok(())
         } else {
-            Err("PTY not started".into())
+            Err(format!("PTY {} not found", id))
+        }
+    }
+
+    pub fn kill(&self, id: u32) -> Result<(), String> {
+        let mut guard = self.instances.lock().unwrap();
+        if guard.remove(&id).is_some() {
+            Ok(())
+        } else {
+            Err(format!("PTY {} not found", id))
         }
     }
 }

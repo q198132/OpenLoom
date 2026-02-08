@@ -130,14 +130,18 @@ export async function generateCommitMessage(diff: string, stat: string): Promise
 
 // ===== PTY =====
 
-export async function ptySpawn() {
+export async function ptySpawn(): Promise<number> {
   return invoke('pty_spawn');
 }
 
-export async function ptyWrite(data: string) {
-  return invoke('pty_write', { data });
+export async function ptyWrite(id: number, data: string) {
+  return invoke('pty_write', { id, data });
 }
 
-export async function ptyResize(cols: number, rows: number) {
-  return invoke('pty_resize', { cols, rows });
+export async function ptyResize(id: number, cols: number, rows: number) {
+  return invoke('pty_resize', { id, cols, rows });
+}
+
+export async function ptyKill(id: number) {
+  return invoke('pty_kill', { id });
 }

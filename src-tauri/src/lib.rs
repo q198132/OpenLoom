@@ -50,6 +50,7 @@ pub fn run() {
             commands::pty::pty_spawn,
             commands::pty::pty_write,
             commands::pty::pty_resize,
+            commands::pty::pty_kill,
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

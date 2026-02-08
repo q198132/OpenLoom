@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
 import type { FileNode } from '@openloom/shared';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 import InlineInput from './InlineInput';
 
 interface Props {
@@ -69,6 +70,14 @@ export default function FileTreeItem({
           isSelected ? 'bg-surface0 text-accent' : 'text-subtext1'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
+        draggable={!node.isDirectory}
+        onDragStart={(e) => {
+          if (node.isDirectory) return;
+          const root = useWorkspaceStore.getState().currentPath;
+          const abs = root ? `${root}/${node.path}` : node.path;
+          e.dataTransfer.setData('text/plain', abs);
+          e.dataTransfer.effectAllowed = 'copy';
+        }}
         onClick={handleClick}
         onContextMenu={(e) => onContextMenu?.(e, node)}
       >
