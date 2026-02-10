@@ -1,11 +1,22 @@
 use std::process::Command;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use tauri::State;
 use crate::state::AppState;
 
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x08000000;
+
+fn git_cmd(args: &[&str], cwd: &str) -> Command {
+    let mut cmd = Command::new("git");
+    cmd.args(args).current_dir(cwd);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(CREATE_NO_WINDOW);
+    cmd
+}
+
 fn git(args: &[&str], cwd: &str) -> Result<String, String> {
-    let output = Command::new("git")
-        .args(args)
-        .current_dir(cwd)
+    let output = git_cmd(args, cwd)
         .output()
         .map_err(|e| e.to_string())?;
 
@@ -17,9 +28,7 @@ fn git(args: &[&str], cwd: &str) -> Result<String, String> {
 }
 
 fn git_raw(args: &[&str], cwd: &str) -> Result<String, String> {
-    let output = Command::new("git")
-        .args(args)
-        .current_dir(cwd)
+    let output = git_cmd(args, cwd)
         .output()
         .map_err(|e| e.to_string())?;
 
