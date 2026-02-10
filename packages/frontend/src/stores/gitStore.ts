@@ -9,17 +9,22 @@ interface GitState {
   loading: boolean;
   commitMessage: string;
   error: string | null;
+  ahead: number;
+  behind: number;
+  syncing: boolean;
   setCommitMessage: (msg: string) => void;
   clearError: () => void;
   fetchStatus: () => Promise<void>;
   fetchBranch: () => Promise<void>;
   fetchLog: () => Promise<void>;
+  fetchSyncStatus: () => Promise<void>;
   stageFiles: (paths: string[]) => Promise<void>;
   stageAll: () => Promise<void>;
   unstageFiles: (paths: string[]) => Promise<void>;
   commit: () => Promise<boolean>;
   push: () => Promise<boolean>;
   pull: () => Promise<boolean>;
+  sync: () => Promise<boolean>;
 }
 
 export const useGitStore = create<GitState>((set, get) => ({
@@ -29,6 +34,9 @@ export const useGitStore = create<GitState>((set, get) => ({
   loading: false,
   commitMessage: '',
   error: null,
+  ahead: 0,
+  behind: 0,
+  syncing: false,
 
   setCommitMessage: (commitMessage) => set({ commitMessage }),
   clearError: () => set({ error: null }),
@@ -51,6 +59,13 @@ export const useGitStore = create<GitState>((set, get) => ({
     try {
       const log = await api.gitLog() as GitLogEntry[];
       if (Array.isArray(log)) set({ log });
+    } catch { /* ignore */ }
+  },
+
+  fetchSyncStatus: async () => {
+    try {
+      const { ahead, behind } = await api.gitSyncStatus();
+      set({ ahead, behind });
     } catch { /* ignore */ }
   },
 
@@ -81,6 +96,7 @@ export const useGitStore = create<GitState>((set, get) => ({
         set({ commitMessage: '' });
         await get().fetchStatus();
         await get().fetchLog();
+        await get().fetchSyncStatus();
         return true;
       }
       set({ error: '提交失败' });
@@ -108,6 +124,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       const data = await api.gitPull() as any;
       if (data.ok) {
         await get().fetchStatus();
+        await get().fetchSyncStatus();
         return true;
       }
       set({ error: 'Pull 失败' });
@@ -115,6 +132,28 @@ export const useGitStore = create<GitState>((set, get) => ({
     } catch (e: any) {
       set({ error: e.toString() || 'Pull 失败' });
       return false;
+    }
+  },
+
+  sync: async () => {
+    set({ syncing: true, error: null });
+    try {
+      // 先 pull 再 push
+      try {
+        await api.gitPull();
+      } catch { /* 没有远程或无需 pull 时忽略 */ }
+      const data = await api.gitPush() as any;
+      if (data.ok) {
+        await get().fetchSyncStatus();
+        return true;
+      }
+      set({ error: '同步失败' });
+      return false;
+    } catch (e: any) {
+      set({ error: e.toString() || '同步失败' });
+      return false;
+    } finally {
+      set({ syncing: false });
     }
   },
 }));

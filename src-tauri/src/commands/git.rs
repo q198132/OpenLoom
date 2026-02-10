@@ -210,6 +210,18 @@ pub async fn git_staged_diff(state: State<'_, AppState>) -> Result<serde_json::V
 }
 
 #[tauri::command]
+pub async fn git_sync_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let cwd = state.get_root().to_string_lossy().to_string();
+    let ahead = git(&["rev-list", "--count", "@{u}..HEAD"], &cwd)
+        .and_then(|s| s.trim().parse::<i64>().map_err(|e| e.to_string()))
+        .unwrap_or(0);
+    let behind = git(&["rev-list", "--count", "HEAD..@{u}"], &cwd)
+        .and_then(|s| s.trim().parse::<i64>().map_err(|e| e.to_string()))
+        .unwrap_or(0);
+    Ok(serde_json::json!({ "ahead": ahead, "behind": behind }))
+}
+
+#[tauri::command]
 pub async fn git_push(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let cwd = state.get_root().to_string_lossy().to_string();
     let result = git(&["push"], &cwd)?;

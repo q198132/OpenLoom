@@ -35,6 +35,7 @@ pub fn run() {
             commands::git::git_show,
             commands::git::git_file_diff,
             commands::git::git_staged_diff,
+            commands::git::git_sync_status,
             commands::git::git_push,
             commands::git::git_pull,
             commands::git::git_working_diff,

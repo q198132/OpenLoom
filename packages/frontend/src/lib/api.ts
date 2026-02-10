@@ -84,6 +84,10 @@ export async function gitStagedDiff(): Promise<{ stat: string; diff: string; fil
   return invoke('git_staged_diff');
 }
 
+export async function gitSyncStatus(): Promise<{ ahead: number; behind: number }> {
+  return invoke('git_sync_status');
+}
+
 export async function gitPush() {
   return invoke('git_push');
 }

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
+import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import * as api from '@/lib/api';
 
 export default function GitCommitBox() {
-  const { files, commitMessage, setCommitMessage, commit, stageAll } = useGitStore();
+  const { files, commitMessage, setCommitMessage, commit, stageAll, ahead, behind, syncing, sync } = useGitStore();
   const [generating, setGenerating] = useState(false);
 
   const hasStagedFiles = files.some((f) => f.staged);
@@ -88,6 +88,20 @@ export default function GitCommitBox() {
       >
         提交 (Ctrl+Enter)
       </button>
+      {(ahead > 0 || behind > 0) && (
+        <button
+          onClick={sync}
+          disabled={syncing}
+          className="w-full mt-1 py-1 text-xs font-medium rounded bg-surface1 text-subtext1 hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
+        >
+          <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
+          <span>
+            {syncing ? '同步中...' : '同步更改'}
+            {ahead > 0 && ` ${ahead}\u2191`}
+            {behind > 0 && ` ${behind}\u2193`}
+          </span>
+        </button>
+      )}
     </div>
   );
 }

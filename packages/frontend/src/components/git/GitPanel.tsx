@@ -7,20 +7,21 @@ import GitActions from './GitActions';
 import GitGraph from './GitGraph';
 
 export default function GitPanel() {
-  const { branch, error, clearError, fetchStatus, fetchBranch, fetchLog } = useGitStore();
+  const { branch, error, clearError, fetchStatus, fetchBranch, fetchLog, fetchSyncStatus } = useGitStore();
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchStatus();
     fetchBranch();
     fetchLog();
-  }, [fetchStatus, fetchBranch, fetchLog]);
+    fetchSyncStatus();
+  }, [fetchStatus, fetchBranch, fetchLog, fetchSyncStatus]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([fetchStatus(), fetchBranch(), fetchLog()]);
+    await Promise.all([fetchStatus(), fetchBranch(), fetchLog(), fetchSyncStatus()]);
     setRefreshing(false);
-  }, [fetchStatus, fetchBranch, fetchLog]);
+  }, [fetchStatus, fetchBranch, fetchLog, fetchSyncStatus]);
 
   return (
     <div className="h-full bg-mantle flex flex-col">
