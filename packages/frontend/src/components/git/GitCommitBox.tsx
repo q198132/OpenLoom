@@ -4,7 +4,7 @@ import { useGitStore } from '@/stores/gitStore';
 import * as api from '@/lib/api';
 
 export default function GitCommitBox() {
-  const { files, commitMessage, setCommitMessage, commit, stageAll, ahead, behind, syncing, sync } = useGitStore();
+  const { files, commitMessage, setCommitMessage, commit, stageAll, ahead, behind, hasRemote, syncing, sync } = useGitStore();
   const [generating, setGenerating] = useState(false);
 
   const hasStagedFiles = files.some((f) => f.staged);
@@ -88,7 +88,7 @@ export default function GitCommitBox() {
       >
         提交 (Ctrl+Enter)
       </button>
-      {(ahead > 0 || behind > 0) && (
+      {hasRemote && (
         <button
           onClick={sync}
           disabled={syncing}
@@ -96,7 +96,7 @@ export default function GitCommitBox() {
         >
           <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
           <span>
-            {syncing ? '同步中...' : '同步更改'}
+            {syncing ? '同步中...' : ahead > 0 || behind > 0 ? '同步更改' : '已同步'}
             {ahead > 0 && ` ${ahead}\u2191`}
             {behind > 0 && ` ${behind}\u2193`}
           </span>

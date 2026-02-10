@@ -212,13 +212,29 @@ pub async fn git_staged_diff(state: State<'_, AppState>) -> Result<serde_json::V
 #[tauri::command]
 pub async fn git_sync_status(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let cwd = state.get_root().to_string_lossy().to_string();
-    let ahead = git(&["rev-list", "--count", "@{u}..HEAD"], &cwd)
+
+    // 先尝试 @{u}，失败则用 origin/<branch> 作为 fallback
+    let upstream = if git(&["rev-parse", "--abbrev-ref", "@{u}"], &cwd).is_ok() {
+        "@{u}".to_string()
+    } else {
+        let branch = git(&["branch", "--show-current"], &cwd).unwrap_or_default();
+        if branch.is_empty() {
+            return Ok(serde_json::json!({ "ahead": 0, "behind": 0, "hasRemote": false }));
+        }
+        let remote_ref = format!("origin/{}", branch);
+        if git(&["rev-parse", &remote_ref], &cwd).is_err() {
+            return Ok(serde_json::json!({ "ahead": 0, "behind": 0, "hasRemote": false }));
+        }
+        remote_ref
+    };
+
+    let ahead = git(&["rev-list", "--count", &format!("{}..HEAD", upstream)], &cwd)
         .and_then(|s| s.trim().parse::<i64>().map_err(|e| e.to_string()))
         .unwrap_or(0);
-    let behind = git(&["rev-list", "--count", "HEAD..@{u}"], &cwd)
+    let behind = git(&["rev-list", "--count", &format!("HEAD..{}", upstream)], &cwd)
         .and_then(|s| s.trim().parse::<i64>().map_err(|e| e.to_string()))
         .unwrap_or(0);
-    Ok(serde_json::json!({ "ahead": ahead, "behind": behind }))
+    Ok(serde_json::json!({ "ahead": ahead, "behind": behind, "hasRemote": true }))
 }
 
 #[tauri::command]

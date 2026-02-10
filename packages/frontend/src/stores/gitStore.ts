@@ -11,6 +11,7 @@ interface GitState {
   error: string | null;
   ahead: number;
   behind: number;
+  hasRemote: boolean;
   syncing: boolean;
   setCommitMessage: (msg: string) => void;
   clearError: () => void;
@@ -36,6 +37,7 @@ export const useGitStore = create<GitState>((set, get) => ({
   error: null,
   ahead: 0,
   behind: 0,
+  hasRemote: false,
   syncing: false,
 
   setCommitMessage: (commitMessage) => set({ commitMessage }),
@@ -64,8 +66,8 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   fetchSyncStatus: async () => {
     try {
-      const { ahead, behind } = await api.gitSyncStatus();
-      set({ ahead, behind });
+      const { ahead, behind, hasRemote } = await api.gitSyncStatus();
+      set({ ahead, behind, hasRemote });
     } catch { /* ignore */ }
   },
 
