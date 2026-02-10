@@ -117,7 +117,7 @@ pub async fn generate_commit_message(
         diff.clone()
     };
 
-    let default_prompt = "You are an expert commit message generator. Generate a high-quality commit message based on the provided git diff.\n\nRules:\n1. Use Conventional Commits format: <type>(<scope>): <subject>\n2. Types: feat, fix, refactor, docs, style, test, chore, perf, ci, build\n3. Scope should be the module/component affected (optional but preferred)\n4. Subject line: imperative mood, lowercase, no period, max 72 chars\n5. If changes are significant, add a blank line then a body with bullet points explaining key changes\n6. Body bullets should start with '- ' and explain WHY, not just WHAT\n7. If multiple unrelated changes exist, focus on the most important one for the subject\n8. Use Chinese for the commit message body if the code comments or file names suggest a Chinese project\n\nReply with ONLY the commit message, nothing else.";
+    let default_prompt = "你是一个专业的 Git 提交信息生成器。请根据提供的 git diff 生成高质量的中文提交信息。\n\n规则：\n1. 使用 Conventional Commits 格式：<type>(<scope>): <中文描述>\n2. type 类型：feat、fix、refactor、docs、style、test、chore、perf、ci、build\n3. scope 为受影响的模块/组件（可选但推荐）\n4. 主题行：祈使语气，不加句号，最多 72 字符\n5. 如果变更较大，空一行后用要点说明关键变更\n6. 要点以 '- ' 开头，解释「为什么」而非仅描述「做了什么」\n7. 如果有多个不相关的变更，主题行聚焦最重要的那个\n8. 提交信息的描述部分必须使用中文\n\n只回复提交信息本身，不要有任何其他内容。";
     let system_prompt = if settings.custom_prompt.is_empty() {
         default_prompt.to_string()
     } else {
