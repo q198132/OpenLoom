@@ -53,7 +53,7 @@ export default function GitGraph() {
       </div>
 
       {open && (
-        <div className="overflow-y-auto max-h-[400px] text-xs">
+        <div className="text-xs">
           {log.map((entry) => (
             <div key={entry.hash}>
               <GraphRow

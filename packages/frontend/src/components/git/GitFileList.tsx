@@ -26,7 +26,7 @@ export default function GitFileList() {
   const unstaged = files.filter((f) => !f.staged);
 
   return (
-    <div className="flex-1 overflow-y-auto text-xs">
+    <div className="text-xs">
       {staged.length > 0 && (
         <FileSection
           title="已暂存的更改"

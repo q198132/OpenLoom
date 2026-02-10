@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { GitBranch, RefreshCw, X } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import GitFileList from './GitFileList';
@@ -9,6 +9,9 @@ import GitGraph from './GitGraph';
 export default function GitPanel() {
   const { branch, error, clearError, fetchStatus, fetchBranch, fetchLog, fetchSyncStatus } = useGitStore();
   const [refreshing, setRefreshing] = useState(false);
+  const [graphRatio, setGraphRatio] = useState(0.4); // 图形区占比
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
 
   useEffect(() => {
     fetchStatus();
@@ -22,6 +25,25 @@ export default function GitPanel() {
     await Promise.all([fetchStatus(), fetchBranch(), fetchLog(), fetchSyncStatus()]);
     setRefreshing(false);
   }, [fetchStatus, fetchBranch, fetchLog, fetchSyncStatus]);
+
+  const handleDragStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    dragging.current = true;
+    const onMove = (ev: MouseEvent) => {
+      if (!dragging.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const y = ev.clientY - rect.top;
+      const ratio = 1 - y / rect.height;
+      setGraphRatio(Math.max(0.15, Math.min(0.75, ratio)));
+    };
+    const onUp = () => {
+      dragging.current = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
 
   return (
     <div className="h-full bg-mantle flex flex-col">
@@ -40,26 +62,41 @@ export default function GitPanel() {
         </button>
       </div>
 
-      {branch && (
-        <div className="flex items-center justify-between px-3 py-1.5 text-xs text-subtext0 border-b border-surface0">
-          <span>分支: <span className="text-accent">{branch.current}</span></span>
-          <GitActions />
+      <div ref={containerRef} className="flex-1 flex flex-col min-h-0">
+        {/* 上半区：分支信息 + 提交 + 文件列表 */}
+        <div className="overflow-y-auto min-h-0" style={{ flex: `${1 - graphRatio}` }}>
+          {branch && (
+            <div className="flex items-center justify-between px-3 py-1.5 text-xs text-subtext0 border-b border-surface0">
+              <span>分支: <span className="text-accent">{branch.current}</span></span>
+              <GitActions />
+            </div>
+          )}
+
+          <GitCommitBox />
+
+          {error && (
+            <div className="flex items-start gap-1.5 px-3 py-1.5 bg-red/10 border-b border-red/20 text-xs text-red">
+              <span className="flex-1 break-all">{error}</span>
+              <button onClick={clearError} className="shrink-0 p-0.5 hover:bg-red/20 rounded">
+                <X size={12} />
+              </button>
+            </div>
+          )}
+
+          <GitFileList />
         </div>
-      )}
 
-      <GitCommitBox />
+        {/* 拖拽分隔条 */}
+        <div
+          className="h-1 shrink-0 cursor-row-resize hover:bg-accent/30 active:bg-accent/50 transition-colors border-t border-surface0"
+          onMouseDown={handleDragStart}
+        />
 
-      {error && (
-        <div className="flex items-start gap-1.5 px-3 py-1.5 bg-red/10 border-b border-red/20 text-xs text-red">
-          <span className="flex-1 break-all">{error}</span>
-          <button onClick={clearError} className="shrink-0 p-0.5 hover:bg-red/20 rounded">
-            <X size={12} />
-          </button>
+        {/* 下半区：图形 */}
+        <div className="overflow-y-auto min-h-0" style={{ flex: `${graphRatio}` }}>
+          <GitGraph />
         </div>
-      )}
-
-      <GitFileList />
-      <GitGraph />
+      </div>
     </div>
   );
 }
