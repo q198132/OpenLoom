@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { EditorTab } from '@openloom/shared';
+import type { EditorTab, ViewType } from '@openloom/shared';
 import * as api from '@/lib/api';
 
 const EXT_LANG_MAP: Record<string, string> = {
@@ -13,6 +13,17 @@ const EXT_LANG_MAP: Record<string, string> = {
 function getLanguage(path: string): string {
   const ext = path.split('.').pop()?.toLowerCase() ?? '';
   return EXT_LANG_MAP[ext] || 'plaintext';
+}
+
+const IMAGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp', 'svg', 'ico'];
+const DOCX_EXTS = ['docx'];
+
+function getViewType(path: string): ViewType {
+  const ext = path.split('.').pop()?.toLowerCase() ?? '';
+  if (IMAGE_EXTS.includes(ext)) return 'image';
+  if (DOCX_EXTS.includes(ext)) return 'docx';
+  if (ext === 'md') return 'markdown';
+  return 'code';
 }
 
 interface CommitDiffState {
@@ -55,20 +66,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return;
     }
 
-    // 获取文件内容
-    const data = await api.readFile(path) as { content: string; path: string };
-    if (!data.content && data.content !== '') return;
-
+    const viewType = getViewType(path);
     const name = path.split('/').pop() || path;
+    let content = '';
+
+    if (viewType === 'image' || viewType === 'docx') {
+      const data = await api.readFileBinary(path) as { data: string; path: string };
+      if (!data.data) return;
+      content = data.data; // base64
+    } else {
+      const data = await api.readFile(path) as { content: string; path: string };
+      if (!data.content && data.content !== '') return;
+      content = data.content;
+    }
+
     const tab: EditorTab = {
       path,
       name,
       language: getLanguage(path),
       isDirty: false,
+      viewType,
     };
 
     const next = new Map(fileContents);
-    next.set(path, data.content);
+    next.set(path, content);
 
     set({
       tabs: [...tabs, tab],

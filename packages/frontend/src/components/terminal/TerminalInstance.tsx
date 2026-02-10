@@ -93,9 +93,11 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
     const term = new Terminal({
       fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace",
-      fontSize: 14,
-      lineHeight: 1.35,
-      letterSpacing: 0.5,
+      fontSize: 15,
+      lineHeight: 1.25,
+      letterSpacing: 0,
+      fontWeight: '400',
+      fontWeightBold: '600',
       theme: DARK_THEME,
       cursorBlink: true,
       cursorStyle: 'bar',
@@ -108,11 +110,23 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     term.loadAddon(new WebLinksAddon());
     term.open(containerRef.current);
 
-    try {
-      term.loadAddon(new WebglAddon());
-    } catch {
-      // WebGL 不可用时回退到 Canvas 渲染
-    }
+    let webglAddon: WebglAddon | null = null;
+
+    const loadWebgl = () => {
+      try {
+        webglAddon = new WebglAddon();
+        webglAddon.onContextLoss(() => {
+          webglAddon?.dispose();
+          webglAddon = null;
+          loadWebgl();
+        });
+        term.loadAddon(webglAddon);
+      } catch {
+        webglAddon = null;
+      }
+    };
+
+    loadWebgl();
 
     termRef.current = term;
     fitRef.current = fitAddon;
@@ -130,12 +144,19 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
         lastCols = cols;
         lastRows = rows;
         api.ptyResize(id, cols, rows).catch(() => {});
+        // 清除 WebGL 纹理缓存并强制重绘，避免残影
+        requestAnimationFrame(() => {
+          if (webglAddon) {
+            try { webglAddon.clearTextureAtlas(); } catch {}
+          }
+          term.refresh(0, term.rows - 1);
+        });
       }
     };
 
     const debouncedFit = () => {
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(doFitAndResize, 50);
+      resizeTimer = setTimeout(doFitAndResize, 80);
     };
 
     // 监听 PTY 输出事件（按 id 过滤）
@@ -168,12 +189,23 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
     setup();
 
+    // 手动处理滚轮事件，避免 WebGL canvas 拦截导致滚动失效
+    const container = containerRef.current;
+    const onWheel = (e: WheelEvent) => {
+      if (term.buffer.active.length > term.rows) {
+        e.preventDefault();
+        term.scrollLines(Math.round(e.deltaY / 25));
+      }
+    };
+    container.addEventListener('wheel', onWheel, { passive: false });
+
     const observer = new ResizeObserver(debouncedFit);
     observer.observe(containerRef.current);
 
     return () => {
       clearTimeout(resizeTimer);
       observer.disconnect();
+      container.removeEventListener('wheel', onWheel);
       if (unlistenOutput) unlistenOutput();
       if (unlistenExit) unlistenExit();
       term.dispose();

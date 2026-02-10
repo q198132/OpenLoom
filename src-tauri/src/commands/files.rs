@@ -39,8 +39,20 @@ pub struct SearchResult {
 
 fn safe_path(root: &Path, relative: &str) -> Result<PathBuf, String> {
     let full = root.join(relative);
-    let resolved = full.canonicalize().unwrap_or_else(|_| full.clone());
     let root_resolved = root.canonicalize().unwrap_or_else(|_| root.to_path_buf());
+    // 文件可能尚不存在（新建场景），尝试 canonicalize 父目录再拼接文件名
+    let resolved = match full.canonicalize() {
+        Ok(p) => p,
+        Err(_) => {
+            if let Some(parent) = full.parent() {
+                let parent_resolved = parent.canonicalize().unwrap_or_else(|_| parent.to_path_buf());
+                let file_name = full.file_name().ok_or("Invalid path")?;
+                parent_resolved.join(file_name)
+            } else {
+                full.clone()
+            }
+        }
+    };
     if !resolved.starts_with(&root_resolved) {
         return Err("Path traversal detected".into());
     }
@@ -297,4 +309,39 @@ pub async fn read_file_binary(
     let bytes = std::fs::read(&full_path).map_err(|e| e.to_string())?;
     let b64 = general_purpose::STANDARD.encode(&bytes);
     Ok(serde_json::json!({ "data": b64, "path": path }))
+}
+
+#[tauri::command]
+pub async fn reveal_in_explorer(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<(), String> {
+    let root = state.get_root();
+    let full_path = safe_path(&root, &path)?;
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg("/select,")
+            .arg(&full_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("-R")
+            .arg(&full_path)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        if let Some(parent) = full_path.parent() {
+            std::process::Command::new("xdg-open")
+                .arg(parent)
+                .spawn()
+                .map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
 }

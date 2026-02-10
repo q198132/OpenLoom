@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { FilePlus, FolderPlus, Pencil, Trash2 } from 'lucide-react';
+import { FilePlus, FolderPlus, Pencil, Trash2, FolderOpen } from 'lucide-react';
 
 interface Props {
   x: number;
@@ -10,6 +10,7 @@ interface Props {
   onNewFolder: () => void;
   onRename: () => void;
   onDelete: () => void;
+  onReveal: () => void;
   onClose: () => void;
 }
 
@@ -37,7 +38,7 @@ function MenuItem({ icon, label, onClick, danger }: MenuItemProps) {
 }
 
 export default function ContextMenu({
-  x, y, isDirectory, isBlank, onNewFile, onNewFolder, onRename, onDelete, onClose,
+  x, y, isDirectory, isBlank, onNewFile, onNewFolder, onRename, onDelete, onReveal, onClose,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -75,6 +76,7 @@ export default function ContextMenu({
         <>
           {(isDirectory) && <div className="border-t border-surface0 my-1" />}
           <MenuItem icon={<Pencil size={14} />} label="重命名" onClick={onRename} />
+          <MenuItem icon={<FolderOpen size={14} />} label="在文件资源管理器中打开" onClick={onReveal} />
           <MenuItem icon={<Trash2 size={14} />} label="删除" onClick={onDelete} danger />
         </>
       )}

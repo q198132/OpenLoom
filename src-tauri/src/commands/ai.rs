@@ -10,6 +10,8 @@ pub struct AiSettings {
     #[serde(rename = "apiKey")]
     pub api_key: String,
     pub model: String,
+    #[serde(rename = "customPrompt", default)]
+    pub custom_prompt: String,
 }
 
 impl Default for AiSettings {
@@ -18,6 +20,7 @@ impl Default for AiSettings {
             base_url: "https://api.openai.com".into(),
             api_key: String::new(),
             model: "gpt-4o-mini".into(),
+            custom_prompt: String::new(),
         }
     }
 }
@@ -60,6 +63,7 @@ pub async fn get_ai_settings(
         "baseUrl": settings.base_url,
         "apiKey": masked,
         "model": settings.model,
+        "customPrompt": settings.custom_prompt,
     }))
 }
 
@@ -69,6 +73,7 @@ pub async fn save_ai_settings(
     base_url: Option<String>,
     api_key: Option<String>,
     model: Option<String>,
+    custom_prompt: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let root = state.get_root();
     let current = read_settings(&root);
@@ -76,6 +81,7 @@ pub async fn save_ai_settings(
         base_url: base_url.unwrap_or(current.base_url),
         api_key: api_key.unwrap_or(current.api_key),
         model: model.unwrap_or(current.model),
+        custom_prompt: custom_prompt.unwrap_or(current.custom_prompt),
     };
     write_settings(&root, &updated)?;
     Ok(serde_json::json!({ "ok": true }))
@@ -111,12 +117,19 @@ pub async fn generate_commit_message(
         diff.clone()
     };
 
+    let default_prompt = "You are an expert commit message generator. Generate a high-quality commit message based on the provided git diff.\n\nRules:\n1. Use Conventional Commits format: <type>(<scope>): <subject>\n2. Types: feat, fix, refactor, docs, style, test, chore, perf, ci, build\n3. Scope should be the module/component affected (optional but preferred)\n4. Subject line: imperative mood, lowercase, no period, max 72 chars\n5. If changes are significant, add a blank line then a body with bullet points explaining key changes\n6. Body bullets should start with '- ' and explain WHY, not just WHAT\n7. If multiple unrelated changes exist, focus on the most important one for the subject\n8. Use Chinese for the commit message body if the code comments or file names suggest a Chinese project\n\nReply with ONLY the commit message, nothing else.";
+    let system_prompt = if settings.custom_prompt.is_empty() {
+        default_prompt.to_string()
+    } else {
+        format!("{}\n\n{}", default_prompt, settings.custom_prompt)
+    };
+
     let body = serde_json::json!({
         "model": settings.model,
         "messages": [
             {
                 "role": "system",
-                "content": "You are an expert commit message generator. Generate a high-quality commit message based on the provided git diff.\n\nRules:\n1. Use Conventional Commits format: <type>(<scope>): <subject>\n2. Types: feat, fix, refactor, docs, style, test, chore, perf, ci, build\n3. Scope should be the module/component affected (optional but preferred)\n4. Subject line: imperative mood, lowercase, no period, max 72 chars\n5. If changes are significant, add a blank line then a body with bullet points explaining key changes\n6. Body bullets should start with '- ' and explain WHY, not just WHAT\n7. If multiple unrelated changes exist, focus on the most important one for the subject\n8. Use Chinese for the commit message body if the code comments or file names suggest a Chinese project\n\nReply with ONLY the commit message, nothing else."
+                "content": system_prompt
             },
             {
                 "role": "user",

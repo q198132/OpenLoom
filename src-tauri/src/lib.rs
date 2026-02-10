@@ -24,6 +24,7 @@ pub fn run() {
             commands::files::search_files,
             commands::files::list_files,
             commands::files::read_file_binary,
+            commands::files::reveal_in_explorer,
             // git
             commands::git::git_status,
             commands::git::git_stage,

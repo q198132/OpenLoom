@@ -133,7 +133,7 @@ function GitFileRow({
     >
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         <FileIcon fileName={fileName} />
-        <span className="truncate text-subtext1">{fileName}</span>
+        <span className="shrink-0 text-subtext1">{fileName}</span>
         {dirPath && (
           <span className="truncate text-overlay0 ml-0.5">{dirPath}</span>
         )}

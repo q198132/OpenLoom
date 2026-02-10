@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { FolderTree, RefreshCw, FilePlus, FolderPlus, ChevronsDownUp } from 'lucide-react';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
+import * as api from '@/lib/api';
 import { useGitStore } from '@/stores/gitStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useControlSocket } from '@/hooks/useWebSocket';
@@ -113,6 +114,12 @@ export default function FileTreePanel() {
     }
   };
 
+  const handleReveal = () => {
+    if (!contextMenu?.node) return;
+    api.revealInExplorer(contextMenu.node.path).catch(() => {});
+    setContextMenu(null);
+  };
+
   const handleRenameConfirm = async (oldPath: string, newName: string) => {
     const parentDir = oldPath.substring(0, oldPath.lastIndexOf('/'));
     const newPath = parentDir ? parentDir + '/' + newName : newName;
@@ -218,6 +225,7 @@ export default function FileTreePanel() {
           onNewFolder={handleNewFolder}
           onRename={handleRename}
           onDelete={handleDelete}
+          onReveal={handleReveal}
           onClose={() => setContextMenu(null)}
         />
       )}

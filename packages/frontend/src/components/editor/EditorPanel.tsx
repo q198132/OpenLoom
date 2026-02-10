@@ -9,6 +9,9 @@ import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import TabBar from './TabBar';
 import DiffReviewBar from './DiffReviewBar';
 import DiffReviewPanel from './DiffReviewPanel';
+import ImagePreview from './ImagePreview';
+import MarkdownPreview from './MarkdownPreview';
+import DocxPreview from './DocxPreview';
 import { useDiffReviewStore } from '@/stores/diffReviewStore';
 
 export default function EditorPanel() {
@@ -21,8 +24,9 @@ export default function EditorPanel() {
   const monacoRef = useRef<any>(null);
 
   const activeContent = activeTab ? fileContents.get(activeTab) : undefined;
-  const activeLanguage =
-    tabs.find((t) => t.path === activeTab)?.language ?? 'plaintext';
+  const activeTabInfo = tabs.find((t) => t.path === activeTab);
+  const activeLanguage = activeTabInfo?.language ?? 'plaintext';
+  const activeViewType = activeTabInfo?.viewType ?? 'code';
 
   // 监听文件树的 open-file 事件
   useEffect(() => {
@@ -34,12 +38,13 @@ export default function EditorPanel() {
     return () => window.removeEventListener('open-file', handler);
   }, [openFile]);
 
-  // Ctrl+S 保存
+  // Ctrl+S 保存（仅文本文件）
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault();
         if (!activeTab) return;
+        if (activeViewType === 'image' || activeViewType === 'docx') return;
         const content = fileContents.get(activeTab);
         if (content === undefined) return;
         api.writeFile(activeTab, content);
@@ -47,7 +52,7 @@ export default function EditorPanel() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeTab, fileContents]);
+  }, [activeTab, activeViewType, fileContents]);
 
   // Ctrl+Shift+F 全局搜索
   useEffect(() => {
@@ -143,27 +148,39 @@ export default function EditorPanel() {
           <TabBar />
           <div className="flex-1 overflow-hidden">
             {activeTab && activeContent !== undefined && (
-              <Editor
-                language={activeLanguage}
-                value={activeContent}
-                theme={theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte'}
-                onMount={handleMount}
-                onChange={(value) => {
-                  if (value !== undefined && activeTab) {
-                    updateContent(activeTab, value);
-                  }
-                }}
-                options={{
-                  fontFamily: "'JetBrains Mono', monospace",
-                  fontSize: 14,
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  renderLineHighlight: 'line',
-                  cursorBlinking: 'smooth',
-                  smoothScrolling: true,
-                  padding: { top: 8 },
-                }}
-              />
+              activeViewType === 'image' ? (
+                <ImagePreview path={activeTab} base64={activeContent} />
+              ) : activeViewType === 'markdown' ? (
+                <MarkdownPreview
+                  content={activeContent}
+                  language={activeLanguage}
+                  onContentChange={(value) => updateContent(activeTab, value)}
+                />
+              ) : activeViewType === 'docx' ? (
+                <DocxPreview base64={activeContent} />
+              ) : (
+                <Editor
+                  language={activeLanguage}
+                  value={activeContent}
+                  theme={theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte'}
+                  onMount={handleMount}
+                  onChange={(value) => {
+                    if (value !== undefined && activeTab) {
+                      updateContent(activeTab, value);
+                    }
+                  }}
+                  options={{
+                    fontFamily: "'JetBrains Mono', monospace",
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    renderLineHighlight: 'line',
+                    cursorBlinking: 'smooth',
+                    smoothScrolling: true,
+                    padding: { top: 8 },
+                  }}
+                />
+              )
             )}
           </div>
         </>

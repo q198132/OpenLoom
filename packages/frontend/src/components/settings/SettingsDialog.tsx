@@ -5,10 +5,10 @@ import { useAiSettingsStore } from '@/stores/aiSettingsStore';
 
 export default function SettingsDialog() {
   const { settingsVisible, toggleSettings } = useLayoutStore();
-  const { baseUrl, apiKey, model, fetchSettings } = useAiSettingsStore();
+  const { baseUrl, apiKey, model, customPrompt, fetchSettings } = useAiSettingsStore();
   const saveSettings = useAiSettingsStore((s) => s.saveSettings);
 
-  const [form, setForm] = useState({ baseUrl: '', apiKey: '', model: '' });
+  const [form, setForm] = useState({ baseUrl: '', apiKey: '', model: '', customPrompt: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -18,6 +18,7 @@ export default function SettingsDialog() {
           baseUrl: useAiSettingsStore.getState().baseUrl,
           apiKey: '',
           model: useAiSettingsStore.getState().model,
+          customPrompt: useAiSettingsStore.getState().customPrompt,
         });
       });
     }
@@ -27,8 +28,9 @@ export default function SettingsDialog() {
     setSaving(true);
     await saveSettings({
       baseUrl: form.baseUrl,
-      apiKey: form.apiKey || apiKey,
+      apiKey: form.apiKey || undefined,
       model: form.model,
+      customPrompt: form.customPrompt,
     });
     setSaving(false);
     toggleSettings();
@@ -42,7 +44,7 @@ export default function SettingsDialog() {
       onClick={toggleSettings}
     >
       <div
-        className="bg-base border border-surface0 rounded-lg shadow-xl w-[440px] max-h-[400px] flex flex-col"
+        className="bg-base border border-surface0 rounded-lg shadow-xl w-[440px] max-h-[520px] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 标题栏 */}
@@ -89,6 +91,16 @@ export default function SettingsDialog() {
               onChange={(e) => setForm({ ...form, model: e.target.value })}
               placeholder="gpt-4o-mini"
               className="w-full px-2 py-1.5 text-xs bg-crust border border-surface0 rounded text-text placeholder:text-overlay0 focus:outline-none focus:border-accent"
+            />
+          </Field>
+
+          <Field label="自定义提示词">
+            <textarea
+              value={form.customPrompt}
+              onChange={(e) => setForm({ ...form, customPrompt: e.target.value })}
+              placeholder="留空则使用默认提示词。可自定义 AI 生成 commit message 时的 system prompt..."
+              rows={4}
+              className="w-full px-2 py-1.5 text-xs bg-crust border border-surface0 rounded text-text placeholder:text-overlay0 focus:outline-none focus:border-accent resize-none"
             />
           </Field>
         </div>

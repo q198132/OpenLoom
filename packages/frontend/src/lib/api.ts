@@ -34,6 +34,10 @@ export async function readFileBinary(path: string) {
   return invoke('read_file_binary', { path });
 }
 
+export async function revealInExplorer(path: string) {
+  return invoke('reveal_in_explorer', { path });
+}
+
 export async function searchFiles(q: string, maxResults?: number) {
   return invoke('search_files', { q, maxResults: maxResults || null });
 }
@@ -120,11 +124,13 @@ export async function saveAiSettings(settings: {
   baseUrl?: string;
   apiKey?: string;
   model?: string;
+  customPrompt?: string;
 }) {
   return invoke('save_ai_settings', {
     baseUrl: settings.baseUrl || null,
     apiKey: settings.apiKey || null,
     model: settings.model || null,
+    customPrompt: settings.customPrompt ?? null,
   });
 }
 

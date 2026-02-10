@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { PanelLeftClose, PanelLeftOpen, Sun, Moon, FolderOpen, ChevronDown, Settings } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Sun, Moon, FolderOpen, ChevronDown, Settings, Github } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 
@@ -90,6 +90,15 @@ export default function TopBar() {
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <a
+          href="https://github.com/q198132/OpenLoom"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"
+          title="GitHub"
+        >
+          <Github size={18} />
+        </a>
         <button
           onClick={toggleSettings}
           className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"

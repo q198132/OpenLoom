@@ -21,9 +21,17 @@ export default function GitCommitBox() {
   const generateCommitMessage = async () => {
     setGenerating(true);
     try {
-      // 没有暂存文件但有未暂存更改时，先自动暂存
-      if (!hasStagedFiles && hasUnstagedFiles) {
-        await stageAll();
+      // 没有暂存文件但有未暂存更改时，先自动暂存全部
+      const currentFiles = useGitStore.getState().files;
+      const hasStaged = currentFiles.some((f) => f.staged);
+      const hasUnstaged = currentFiles.some((f) => !f.staged);
+
+      if (!hasStaged && hasUnstaged) {
+        try {
+          await useGitStore.getState().stageAll();
+        } catch (e) {
+          console.warn('自动暂存失败，尝试继续:', e);
+        }
       }
 
       // 1. 获取暂存区 diff
@@ -35,15 +43,16 @@ export default function GitCommitBox() {
       try {
         const { message } = await api.generateCommitMessage(diff, stat);
         if (message) { setCommitMessage(message); setGenerating(false); return; }
-      } catch {
+      } catch (err: any) {
+        console.error('AI 生成失败:', err);
         // AI 不可用，走 fallback
       }
 
       // 3. 规则生成 fallback
       const msg = generateByRule(stat, diffFiles);
       setCommitMessage(msg);
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('生成提交信息失败:', err);
     }
     setGenerating(false);
   };
