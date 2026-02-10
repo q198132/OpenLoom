@@ -28,7 +28,7 @@ export default function SettingsDialog() {
     setSaving(true);
     await saveSettings({
       baseUrl: form.baseUrl,
-      apiKey: form.apiKey || undefined,
+      apiKey: form.apiKey,
       model: form.model,
       customPrompt: form.customPrompt,
     });
