@@ -6,12 +6,20 @@ import GitCommitBox from './GitCommitBox';
 import GitActions from './GitActions';
 import GitGraph from './GitGraph';
 
+// 模块级变量，切换面板时不会丢失
+let _graphOpen = true;
+let _graphRatio = 0.4;
+
 export default function GitPanel() {
   const { branch, error, clearError, fetchStatus, fetchBranch, fetchLog, fetchSyncStatus } = useGitStore();
   const [refreshing, setRefreshing] = useState(false);
-  const [graphRatio, setGraphRatio] = useState(0.4); // 图形区占比
+  const [graphOpen, _setGraphOpen] = useState(_graphOpen);
+  const [graphRatio, _setGraphRatio] = useState(_graphRatio);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+
+  const setGraphOpen = useCallback((v: boolean) => { _graphOpen = v; _setGraphOpen(v); }, []);
+  const setGraphRatio = useCallback((v: number) => { _graphRatio = v; _setGraphRatio(v); }, []);
 
   useEffect(() => {
     fetchStatus();
@@ -64,7 +72,10 @@ export default function GitPanel() {
 
       <div ref={containerRef} className="flex-1 flex flex-col min-h-0">
         {/* 上半区：分支信息 + 提交 + 文件列表 */}
-        <div className="overflow-y-auto min-h-0" style={{ flex: `${1 - graphRatio}` }}>
+        <div
+          className="overflow-y-auto min-h-0"
+          style={{ flex: graphOpen ? 1 - graphRatio : 1 }}
+        >
           {branch && (
             <div className="flex items-center justify-between px-3 py-1.5 text-xs text-subtext0 border-b border-surface0">
               <span>分支: <span className="text-accent">{branch.current}</span></span>
@@ -86,15 +97,20 @@ export default function GitPanel() {
           <GitFileList />
         </div>
 
-        {/* 拖拽分隔条 */}
-        <div
-          className="h-1 shrink-0 cursor-row-resize hover:bg-accent/30 active:bg-accent/50 transition-colors border-t border-surface0"
-          onMouseDown={handleDragStart}
-        />
+        {/* 拖拽分隔条：仅展开时显示 */}
+        {graphOpen && (
+          <div
+            className="h-1 shrink-0 cursor-row-resize hover:bg-accent/30 active:bg-accent/50 transition-colors border-t border-surface0"
+            onMouseDown={handleDragStart}
+          />
+        )}
 
         {/* 下半区：图形 */}
-        <div className="overflow-y-auto min-h-0" style={{ flex: `${graphRatio}` }}>
-          <GitGraph />
+        <div
+          className={graphOpen ? 'overflow-y-auto min-h-0' : 'shrink-0'}
+          style={graphOpen ? { flex: graphRatio } : undefined}
+        >
+          <GitGraph open={graphOpen} onToggle={() => setGraphOpen(!graphOpen)} />
         </div>
       </div>
     </div>

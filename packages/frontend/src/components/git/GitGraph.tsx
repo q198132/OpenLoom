@@ -16,9 +16,8 @@ interface CommitDetail {
   files: { file: string; stats: string }[];
 }
 
-export default function GitGraph() {
+export default function GitGraph({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const { log, branch } = useGitStore();
-  const [open, setOpen] = useState(true);
   const [selectedHash, setSelectedHash] = useState<string | null>(null);
   const [detail, setDetail] = useState<CommitDetail | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,13 +37,11 @@ export default function GitGraph() {
     setLoading(false);
   };
 
-  if (log.length === 0) return null;
-
   return (
-    <div className="border-t border-surface0 flex flex-col min-h-0">
+    <div className="flex flex-col min-h-0 h-full">
       <div
         className="flex items-center justify-between h-[22px] px-2 cursor-pointer select-none hover:bg-surface0 text-subtext0 text-xs shrink-0"
-        onClick={() => setOpen(!open)}
+        onClick={onToggle}
       >
         <div className="flex items-center gap-1">
           {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
