@@ -122,10 +122,15 @@ OpenLoom 的核心。基于 **Monaco Editor**——与 VS Code 同款引擎。
 - xterm.js + WebGL 渲染
 - 自动适配面板大小
 - 链接检测，可点击 URL
+- **文件拖拽到终端** — 从文件树拖拽文件到终端，自动粘贴文件路径
+
+![文件拖拽到终端](docs/screenshots/terminal-drag-drop.png)
 
 ### Git 集成
 
 Git 内置于侧栏，无需再切换到终端执行基本操作。
+
+![Git 面板](docs/screenshots/git-panel.png)
 
 - 文件状态总览（已修改、已添加、已删除、未跟踪）
 - 单文件暂存 / 取消暂存

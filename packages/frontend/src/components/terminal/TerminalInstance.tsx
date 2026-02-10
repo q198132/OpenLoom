@@ -92,7 +92,7 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     if (!containerRef.current) return;
 
     const term = new Terminal({
-      fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace",
+      fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace",
       fontSize: 15,
       lineHeight: 1.25,
       letterSpacing: 0,
@@ -191,10 +191,17 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
     // 手动处理滚轮事件，避免 WebGL canvas 拦截导致滚动失效
     const container = containerRef.current;
+    let scrollAccumulator = 0;
     const onWheel = (e: WheelEvent) => {
       if (term.buffer.active.length > term.rows) {
         e.preventDefault();
-        term.scrollLines(Math.round(e.deltaY / 25));
+        scrollAccumulator += e.deltaY;
+        // macOS 触控板 deltaY 很小（1~5），需要累积；鼠标滚轮 deltaY 较大（100+）
+        const lines = Math.trunc(scrollAccumulator / 25);
+        if (lines !== 0) {
+          scrollAccumulator -= lines * 25;
+          term.scrollLines(lines);
+        }
       }
     };
     container.addEventListener('wheel', onWheel, { passive: false });

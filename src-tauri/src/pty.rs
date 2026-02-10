@@ -1,4 +1,4 @@
-use portable_pty::{native_pty_system, CommandBuilder, MasterPty, PtySize};
+use portable_pty::{native_pty_system, Child, CommandBuilder, MasterPty, PtySize};
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -8,6 +8,7 @@ use tauri::{AppHandle, Emitter};
 struct PtyInstance {
     writer: Box<dyn Write + Send>,
     master: Box<dyn MasterPty + Send>,
+    child: Box<dyn Child + Send + Sync>,
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -66,7 +67,7 @@ impl PtyManager {
             cmd.env("LC_ALL", "en_US.UTF-8");
         }
 
-        let _child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
+        let child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
         drop(pair.slave);
 
         let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
@@ -75,6 +76,7 @@ impl PtyManager {
         let instance = PtyInstance {
             writer,
             master: pair.master,
+            child,
         };
 
         self.instances.lock().unwrap().insert(id, instance);
@@ -130,7 +132,8 @@ impl PtyManager {
 
     pub fn kill(&self, id: u32) -> Result<(), String> {
         let mut guard = self.instances.lock().unwrap();
-        if guard.remove(&id).is_some() {
+        if let Some(mut inst) = guard.remove(&id) {
+            let _ = inst.child.kill();
             Ok(())
         } else {
             Err(format!("PTY {} not found", id))
