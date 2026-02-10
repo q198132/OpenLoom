@@ -63,9 +63,9 @@ OpenLoom                              → 看变更、审 Diff、提交 Git
 你只需要打开 OpenLoom，观察 AI 在终端中实时修改的文件，审查 Diff，然后一键提交。
 
 - **Monaco Editor** — 与 VS Code 同款编辑器引擎
-- **内置终端** — 基于 xterm.js + portable-pty（Rust）的完整 PTY 终端
+- **内置终端** — 基于 xterm.js + portable-pty（Rust）的完整 PTY 终端，支持多标签页
 - **文件树** — 右键菜单支持新建、重命名、删除，实时监听文件变更
-- **Git 管理** — 状态、暂存、提交、分支切换、提交历史图
+- **Git 管理** — 状态、暂存、提交、Push/Pull/Sync、分支切换、提交历史图
 - **全局搜索**（Ctrl+Shift+F）— 跨文件全文搜索
 - **快速打开**（Ctrl+P）— 模糊匹配快速定位文件
 - **Diff 审查** — 审查 AI 生成的代码变更后再接受
@@ -117,6 +117,7 @@ OpenLoom 的核心。基于 **Monaco Editor**——与 VS Code 同款引擎。
 
 真正的终端，通过 Rust `portable-pty` 提供完整 PTY 支持。
 
+- **多终端标签页** — 同时运行多个终端实例，自由切换
 - 基于 Tauri 事件的实时通信
 - xterm.js + WebGL 渲染
 - 自动适配面板大小
@@ -129,8 +130,10 @@ Git 内置于侧栏，无需再切换到终端执行基本操作。
 - 文件状态总览（已修改、已添加、已删除、未跟踪）
 - 单文件暂存 / 取消暂存
 - 提交并填写信息
+- **Push / Pull / Sync** — 一键同步远程仓库
+- **同步状态指示** — 实时显示本地与远程的 ahead/behind 数量
 - 分支切换与创建
-- 提交历史可视化图
+- **可拖拽提交图** — 提交历史可视化图，区域大小可自由拖拽调整
 - 提交 diff 查看器
 - AI 自动生成 commit message（支持 OpenAI 兼容 API）
 
