@@ -57,6 +57,15 @@ impl PtyManager {
         };
         cmd.cwd(&cwd);
 
+        // 设置终端类型，确保 readline/补全/删除键等正常工作
+        cmd.env("TERM", "xterm-256color");
+        // macOS 需要 UTF-8 locale 避免编码问题
+        #[cfg(target_os = "macos")]
+        {
+            cmd.env("LANG", "en_US.UTF-8");
+            cmd.env("LC_ALL", "en_US.UTF-8");
+        }
+
         let _child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
         drop(pair.slave);
 

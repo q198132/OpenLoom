@@ -33,26 +33,26 @@ const DARK_THEME = {
 };
 
 const LIGHT_THEME = {
-  background: '#dce0e8',
+  background: '#eff1f5',
   foreground: '#4c4f69',
   cursor: '#dc8a78',
-  selectionBackground: '#acb0be',
-  black: '#5c5f77',
+  selectionBackground: '#9ca0b0',
+  black: '#4c4f69',
   red: '#d20f39',
   green: '#40a02b',
   yellow: '#df8e1d',
   blue: '#1e66f5',
   magenta: '#8839ef',
   cyan: '#179299',
-  white: '#acb0be',
-  brightBlack: '#6c6f85',
+  white: '#dce0e8',
+  brightBlack: '#7c7f93',
   brightRed: '#d20f39',
   brightGreen: '#40a02b',
   brightYellow: '#df8e1d',
   brightBlue: '#1e66f5',
   brightMagenta: '#8839ef',
   brightCyan: '#179299',
-  brightWhite: '#bcc0cc',
+  brightWhite: '#eff1f5',
 };
 
 interface TerminalInstanceProps {
