@@ -1,5 +1,6 @@
 import { FolderTree, GitBranch, Search } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useGitStore } from '@/stores/gitStore';
 import FileTreePanel from '../filetree/FileTreePanel';
 import GitPanel from '../git/GitPanel';
 import SearchPanel from '../search/SearchPanel';
@@ -32,6 +33,8 @@ function SidebarIcon({
 
 export default function SidebarContainer() {
   const { sidebarTab, setSidebarTab } = useLayoutStore();
+  const gitFiles = useGitStore((s) => s.files);
+  const changeCount = gitFiles.length;
 
   return (
     <div className="h-full flex">
@@ -49,7 +52,14 @@ export default function SidebarContainer() {
           onClick={() => setSidebarTab('git')}
           title="源代码管理"
         >
-          <GitBranch size={18} />
+          <div className="relative">
+            <GitBranch size={18} />
+            {changeCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-accent text-crust text-[10px] font-bold leading-none px-0.5">
+                {changeCount > 99 ? '99+' : changeCount}
+              </span>
+            )}
+          </div>
         </SidebarIcon>
         <SidebarIcon
           active={sidebarTab === 'search'}

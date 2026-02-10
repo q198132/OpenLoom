@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FolderTree, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { FolderTree, RefreshCw, FilePlus, FolderPlus, ChevronsDownUp } from 'lucide-react';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
+import { useGitStore } from '@/stores/gitStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useControlSocket } from '@/hooks/useWebSocket';
 import FileTreeItem from './FileTreeItem';
 import ContextMenu from './ContextMenu';
@@ -8,7 +10,10 @@ import InlineInput from './InlineInput';
 import type { FileNode, ControlMessage } from '@openloom/shared';
 
 export default function FileTreePanel() {
-  const { nodes, loading, refreshRoot, createFile, createDir, renameNode, deleteNode } = useFileTreeStore();
+  const { nodes, loading, refreshRoot, collapseAll, createFile, createDir, renameNode, deleteNode } = useFileTreeStore();
+  const { files: gitFiles, fetchStatus: fetchGitStatus } = useGitStore();
+  const currentPath = useWorkspaceStore((s) => s.currentPath);
+  const prevPathRef = useRef(currentPath);
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
@@ -24,16 +29,27 @@ export default function FileTreePanel() {
     (msg: ControlMessage) => {
       if (msg.type === 'file-changed') {
         refreshRoot();
+        fetchGitStatus();
       }
     },
-    [refreshRoot],
+    [refreshRoot, fetchGitStatus],
   );
 
   useControlSocket(onControlMessage);
 
   useEffect(() => {
     refreshRoot();
-  }, [refreshRoot]);
+    fetchGitStatus();
+  }, [refreshRoot, fetchGitStatus]);
+
+  // 工作区切换时自动刷新文件树和 Git 状态
+  useEffect(() => {
+    if (prevPathRef.current !== currentPath && currentPath) {
+      refreshRoot();
+      fetchGitStatus();
+    }
+    prevPathRef.current = currentPath;
+  }, [currentPath, refreshRoot, fetchGitStatus]);
 
   const handleFileClick = (path: string) => {
     window.dispatchEvent(
@@ -121,13 +137,39 @@ export default function FileTreePanel() {
           <FolderTree size={14} />
           <span>资源管理器</span>
         </div>
-        <button
-          onClick={refreshRoot}
-          className="p-1 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
-          title="刷新"
-        >
-          <RefreshCw size={13} />
-        </button>
+      </div>
+      <div className="flex items-center justify-between h-7 px-3 group">
+        <span className="text-[11px] font-semibold text-subtext1 uppercase tracking-wider">文件</span>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => { setCreatingIn(''); setCreatingType('file'); }}
+            className="p-0.5 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
+            title="新建文件"
+          >
+            <FilePlus size={14} />
+          </button>
+          <button
+            onClick={() => { setCreatingIn(''); setCreatingType('folder'); }}
+            className="p-0.5 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
+            title="新建文件夹"
+          >
+            <FolderPlus size={14} />
+          </button>
+          <button
+            onClick={() => { refreshRoot(); fetchGitStatus(); }}
+            className="p-0.5 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
+            title="刷新"
+          >
+            <RefreshCw size={13} />
+          </button>
+          <button
+            onClick={collapseAll}
+            className="p-0.5 rounded hover:bg-surface0 text-overlay0 hover:text-text transition-colors"
+            title="折叠全部"
+          >
+            <ChevronsDownUp size={14} />
+          </button>
+        </div>
       </div>
       <div
         className="flex-1 overflow-y-auto py-1"
@@ -159,6 +201,7 @@ export default function FileTreePanel() {
                 onRenameConfirm={handleRenameConfirm}
                 onCreateConfirm={handleCreateConfirm}
                 onEditCancel={clearEdit}
+                gitFiles={gitFiles}
               />
             ))}
           </>

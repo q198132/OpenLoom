@@ -23,3 +23,4 @@ walkdir = "2"
 reqwest = { version = "0.12", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 portable-pty = "0.8"
+base64 = "0.22"

@@ -11,7 +11,6 @@ use pty::PtyManager;
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .manage(AppState::new())
         .manage(PtyManager::new())
         .invoke_handler(tauri::generate_handler![
             // files
@@ -24,6 +23,7 @@ pub fn run() {
             commands::files::delete_node,
             commands::files::search_files,
             commands::files::list_files,
+            commands::files::read_file_binary,
             // git
             commands::git::git_status,
             commands::git::git_stage,
@@ -53,6 +53,9 @@ pub fn run() {
             commands::pty::pty_kill,
         ])
         .setup(|app| {
+            let config_dir = app.path().app_data_dir().ok();
+            let state = AppState::new(config_dir);
+            app.manage(state);
             let state = app.state::<AppState>();
             watcher::start_watcher(app.handle().clone(), &state);
             Ok(())

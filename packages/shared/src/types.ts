@@ -42,9 +42,12 @@ export interface GitBranchInfo {
 }
 
 // 编辑器标签
+export type ViewType = 'code' | 'image' | 'markdown' | 'docx';
+
 export interface EditorTab {
   path: string;
   name: string;
   language: string;
   isDirty: boolean;
+  viewType: ViewType;
 }

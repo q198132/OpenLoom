@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 use tauri::State;
 use serde::Serialize;
+use base64::{Engine as _, engine::general_purpose};
 use crate::state::AppState;
 
 const IGNORED_DIRS: &[&str] = &[
@@ -284,4 +285,16 @@ pub async fn list_files(
 
     walk(&root, "", &mut files);
     Ok(files)
+}
+
+#[tauri::command]
+pub async fn read_file_binary(
+    state: State<'_, AppState>,
+    path: String,
+) -> Result<serde_json::Value, String> {
+    let root = state.get_root();
+    let full_path = safe_path(&root, &path)?;
+    let bytes = std::fs::read(&full_path).map_err(|e| e.to_string())?;
+    let b64 = general_purpose::STANDARD.encode(&bytes);
+    Ok(serde_json::json!({ "data": b64, "path": path }))
 }

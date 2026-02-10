@@ -9,6 +9,7 @@ interface FileTreeState {
   loading: boolean;
   fetchChildren: (dir?: string) => Promise<FileNode[]>;
   toggleExpand: (path: string) => void;
+  collapseAll: () => void;
   setSelected: (path: string | null) => void;
   refreshRoot: () => Promise<void>;
   createFile: (filePath: string) => Promise<boolean>;
@@ -41,6 +42,8 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   },
 
   setSelected: (path) => set({ selectedPath: path }),
+
+  collapseAll: () => set({ expandedPaths: new Set() }),
 
   refreshRoot: async () => {
     set({ loading: true, expandedPaths: new Set(), selectedPath: null });

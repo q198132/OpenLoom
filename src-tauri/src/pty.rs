@@ -48,6 +48,13 @@ impl PtyManager {
             .map_err(|e| e.to_string())?;
 
         let mut cmd = CommandBuilder::new_default_prog();
+        // Windows canonicalize 产生的 \\?\ 前缀 CMD 不支持，需要去掉
+        #[cfg(target_os = "windows")]
+        let cwd = if let Some(stripped) = cwd.strip_prefix(r"\\?\") {
+            stripped.to_string()
+        } else {
+            cwd
+        };
         cmd.cwd(&cwd);
 
         let _child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;

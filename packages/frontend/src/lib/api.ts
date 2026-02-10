@@ -30,6 +30,10 @@ export async function deleteNode(path: string) {
   return invoke('delete_node', { path });
 }
 
+export async function readFileBinary(path: string) {
+  return invoke('read_file_binary', { path });
+}
+
 export async function searchFiles(q: string, maxResults?: number) {
   return invoke('search_files', { q, maxResults: maxResults || null });
 }

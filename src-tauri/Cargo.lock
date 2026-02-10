@@ -2331,6 +2331,7 @@ dependencies = [
 name = "openloom"
 version = "0.1.0"
 dependencies = [
+ "base64 0.22.1",
  "notify",
  "notify-debouncer-mini",
  "portable-pty",
