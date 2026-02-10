@@ -146,7 +146,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       } catch { /* 没有远程或无需 pull 时忽略 */ }
       const data = await api.gitPush() as any;
       if (data.ok) {
-        await get().fetchSyncStatus();
+        await Promise.all([get().fetchStatus(), get().fetchLog(), get().fetchSyncStatus()]);
         return true;
       }
       set({ error: '同步失败' });
