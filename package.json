@@ -1,6 +1,6 @@
 {
   "name": "openloom",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "bin": {
     "openloom": "./bin/openloom.mjs"
@@ -16,7 +16,8 @@
     "dev:backend": "tsx watch packages/backend/src/index.ts",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "diagnose": "node scripts/diagnose-terminal.mjs"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.10.0",

@@ -296,6 +296,17 @@ openloom/
 
 ## 更新日志
 
+### v0.1.6
+
+**🐛 修复**
+- 修复 macOS IDE 内置终端无法运行 `opencode` 等命令的问题
+- 根本原因：PTY 创建的是非登录 shell，缺少环境变量和 PATH 配置
+- 解决方案：让 bash 使用 `-l` 参数启动登录 shell，加载完整环境变量
+
+**🛠️ 新增**
+- 添加终端环境诊断工具 `npm run diagnose`，帮助排查终端环境问题
+- 添加详细的修复文档 `docs/mac-terminal-fix.md`
+
 ### v0.1.5
 
 - 重写设置对话框为分页式 UI（通用 / 快捷键 / AI）

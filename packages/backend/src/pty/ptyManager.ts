@@ -7,12 +7,21 @@ export class PtyManager {
   private exitListeners: ((code: number) => void)[] = [];
 
   spawn(cols = 80, rows = 24, cwd?: string): void {
-    const shell =
-      os.platform() === 'win32'
-        ? 'powershell.exe'
-        : process.env.SHELL || '/bin/bash';
+    let shell: string;
+    let args: string[];
 
-    this.process = pty.spawn(shell, [], {
+    if (os.platform() === 'win32') {
+      shell = 'powershell.exe';
+      args = [];
+    } else {
+      // Mac/Linux: 使用登录 shell 以加载完整的环境变量
+      // 注意：bash 需要 -l 参数，zsh 自动就是登录 shell
+      shell = process.env.SHELL || '/bin/bash';
+      const isBash = shell.includes('bash');
+      args = isBash ? ['-l'] : []; // bash 需要显式 -l 参数
+    }
+
+    this.process = pty.spawn(shell, args, {
       name: 'xterm-256color',
       cols,
       rows,
