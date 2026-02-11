@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import Editor from '@monaco-editor/react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
@@ -42,7 +43,7 @@ export default function MarkdownPreview({ content, language, onContentChange }: 
         {mode === 'preview' ? (
           <div className="h-full overflow-auto p-6">
             <article className="prose prose-invert max-w-none markdown-body">
-              <ReactMarkdown>{content}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </article>
           </div>
         ) : (

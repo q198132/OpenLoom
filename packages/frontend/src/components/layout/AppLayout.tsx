@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { PanelGroup, Panel, PanelResizeHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useConfigStore, matchShortcut } from '@/stores/configStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useEditorStore } from '@/stores/editorStore';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
@@ -36,17 +37,23 @@ export default function AppLayout() {
 
   useControlSocket(handleControlMessage);
 
-  // Ctrl+P 快速打开文件
+  const shortcuts = useConfigStore((s) => s.config.shortcuts);
+
+  // 快捷键：快速打开 + 切换侧栏
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+      if (matchShortcut(e, shortcuts.quickOpen)) {
         e.preventDefault();
         useLayoutStore.getState().toggleQuickOpen();
+      }
+      if (matchShortcut(e, shortcuts.toggleSidebar)) {
+        e.preventDefault();
+        useLayoutStore.getState().toggleSidebar();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [shortcuts.quickOpen, shortcuts.toggleSidebar]);
 
   return (
     <div className="flex flex-col h-full">

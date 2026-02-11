@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
+import { useConfigStore, matchShortcut } from '@/stores/configStore';
 import * as api from '@/lib/api';
 
 export default function GitCommitBox() {
   const { files, commitMessage, setCommitMessage, commit, stageAll, ahead, behind, hasRemote, syncing, sync } = useGitStore();
   const [generating, setGenerating] = useState(false);
+  const shortcuts = useConfigStore((s) => s.config.shortcuts);
 
   const hasStagedFiles = files.some((f) => f.staged);
   const hasUnstagedFiles = files.some((f) => !f.staged);
@@ -76,7 +78,7 @@ export default function GitCommitBox() {
         placeholder="提交信息..."
         className="w-full h-16 px-2 py-1.5 text-xs bg-crust text-text border border-surface0 rounded resize-none focus:outline-none focus:border-accent placeholder:text-overlay0"
         onKeyDown={(e) => {
-          if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+          if (matchShortcut(e.nativeEvent, shortcuts.gitCommit)) {
             handleCommit();
           }
         }}

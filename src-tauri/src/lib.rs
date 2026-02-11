@@ -45,14 +45,15 @@ pub fn run() {
             commands::workspace::browse_dirs,
             commands::workspace::get_recent,
             // ai
-            commands::ai::get_ai_settings,
-            commands::ai::save_ai_settings,
             commands::ai::generate_commit_message,
             // pty
             commands::pty::pty_spawn,
             commands::pty::pty_write,
             commands::pty::pty_resize,
             commands::pty::pty_kill,
+            // config
+            commands::config::get_config,
+            commands::config::save_config,
         ])
         .setup(|app| {
             let config_dir = app.path().app_data_dir().ok();

@@ -120,24 +120,6 @@ export async function getRecent() {
 
 // ===== AI =====
 
-export async function getAiSettings() {
-  return invoke('get_ai_settings');
-}
-
-export async function saveAiSettings(settings: {
-  baseUrl?: string;
-  apiKey?: string;
-  model?: string;
-  customPrompt?: string;
-}) {
-  return invoke('save_ai_settings', {
-    baseUrl: settings.baseUrl || null,
-    apiKey: settings.apiKey || null,
-    model: settings.model || null,
-    customPrompt: settings.customPrompt ?? null,
-  });
-}
-
 export async function generateCommitMessage(diff: string, stat: string): Promise<{ message: string }> {
   return invoke('generate_commit_message', { diff, stat });
 }
@@ -158,4 +140,35 @@ export async function ptyResize(id: number, cols: number, rows: number) {
 
 export async function ptyKill(id: number) {
   return invoke('pty_kill', { id });
+}
+
+// ===== Config =====
+
+export interface Shortcuts {
+  saveFile: string;
+  quickOpen: string;
+  globalSearch: string;
+  toggleSidebar: string;
+  gitCommit: string;
+}
+
+export interface AiConfig {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  customPrompt: string;
+}
+
+export interface AppConfig {
+  terminalFontSize: number;
+  shortcuts: Shortcuts;
+  ai: AiConfig;
+}
+
+export async function getConfig(): Promise<AppConfig> {
+  return invoke('get_config');
+}
+
+export async function saveConfig(config: AppConfig) {
+  return invoke('save_config', { config });
 }

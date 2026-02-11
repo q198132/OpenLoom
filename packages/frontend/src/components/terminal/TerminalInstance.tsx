@@ -8,6 +8,7 @@ import { listen } from '@tauri-apps/api/event';
 import * as api from '@/lib/api';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useConfigStore } from '@/stores/configStore';
 
 const DARK_THEME = {
   background: '#11111b',
@@ -64,9 +65,11 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
   const fitRef = useRef<FitAddon | null>(null);
+  const webglRef = useRef<WebglAddon | null>(null);
   const [dragging, setDragging] = useState(false);
   const setConnected = useTerminalStore((s) => s.setConnected);
   const theme = useLayoutStore((s) => s.theme);
+  const terminalFontSize = useConfigStore((s) => s.config.terminalFontSize);
 
   // 全局拖拽检测：window 级别监听，避免 xterm canvas 拦截事件
   useEffect(() => {
@@ -93,7 +96,7 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
     const term = new Terminal({
       fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace",
-      fontSize: 15,
+      fontSize: terminalFontSize,
       lineHeight: 1.25,
       letterSpacing: 0,
       fontWeight: '400',
@@ -110,19 +113,18 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     term.loadAddon(new WebLinksAddon());
     term.open(containerRef.current);
 
-    let webglAddon: WebglAddon | null = null;
-
     const loadWebgl = () => {
       try {
-        webglAddon = new WebglAddon();
-        webglAddon.onContextLoss(() => {
-          webglAddon?.dispose();
-          webglAddon = null;
+        const addon = new WebglAddon();
+        addon.onContextLoss(() => {
+          addon.dispose();
+          webglRef.current = null;
           loadWebgl();
         });
-        term.loadAddon(webglAddon);
+        term.loadAddon(addon);
+        webglRef.current = addon;
       } catch {
-        webglAddon = null;
+        webglRef.current = null;
       }
     };
 
@@ -146,8 +148,8 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
         api.ptyResize(id, cols, rows).catch(() => {});
         // 清除 WebGL 纹理缓存并强制重绘，避免残影
         requestAnimationFrame(() => {
-          if (webglAddon) {
-            try { webglAddon.clearTextureAtlas(); } catch {}
+          if (webglRef.current) {
+            try { webglRef.current.clearTextureAtlas(); } catch {}
           }
           term.refresh(0, term.rows - 1);
         });
@@ -174,6 +176,24 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
         if (event.payload.id === id) {
           setConnected(id, false);
         }
+      });
+
+      // 拦截 Ctrl+C / Ctrl+V 实现复制粘贴
+      term.attachCustomKeyEventHandler((e) => {
+        if (e.type !== 'keydown') return true;
+        if (e.ctrlKey && e.key === 'c' && term.hasSelection()) {
+          navigator.clipboard.writeText(term.getSelection());
+          term.clearSelection();
+          return false;
+        }
+        if (e.ctrlKey && e.key === 'v') {
+          e.preventDefault();
+          navigator.clipboard.readText().then((text) => {
+            api.ptyWrite(id, text).catch(() => {});
+          });
+          return false;
+        }
+        return true;
       });
 
       // 终端输入 → PTY
@@ -206,12 +226,8 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     };
     container.addEventListener('wheel', onWheel, { passive: false });
 
-    const observer = new ResizeObserver(debouncedFit);
-    observer.observe(containerRef.current);
-
     return () => {
       clearTimeout(resizeTimer);
-      observer.disconnect();
       container.removeEventListener('wheel', onWheel);
       if (unlistenOutput) unlistenOutput();
       if (unlistenExit) unlistenExit();
@@ -221,18 +237,72 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ResizeObserver 只在可见时激活
+  useEffect(() => {
+    if (!visible || !containerRef.current || !fitRef.current || !termRef.current) return;
+
+    const container = containerRef.current;
+    const fitAddon = fitRef.current;
+    const term = termRef.current;
+    let resizeTimer: ReturnType<typeof setTimeout>;
+
+    const debouncedFit = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        try {
+          fitAddon.fit();
+          const { cols, rows } = term;
+          api.ptyResize(id, cols, rows).catch(() => {});
+        } catch {}
+      }, 80);
+    };
+
+    const observer = new ResizeObserver(debouncedFit);
+    observer.observe(container);
+
+    return () => {
+      clearTimeout(resizeTimer);
+      observer.disconnect();
+    };
+  }, [id, visible]);
+
   // 主题切换联动
   useEffect(() => {
-    if (termRef.current) {
-      termRef.current.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
-    }
+    const term = termRef.current;
+    if (!term) return;
+    term.options.theme = theme === 'dark' ? DARK_THEME : LIGHT_THEME;
+    requestAnimationFrame(() => {
+      if (webglRef.current) {
+        try { webglRef.current.clearTextureAtlas(); } catch {}
+      }
+      term.refresh(0, term.rows - 1);
+    });
   }, [theme]);
 
-  // visible 变化时重新 fit
+  // 字号动态更新
   useEffect(() => {
-    if (visible && fitRef.current) {
+    const term = termRef.current;
+    if (!term) return;
+    term.options.fontSize = terminalFontSize;
+    requestAnimationFrame(() => {
+      try { fitRef.current?.fit(); } catch {}
+      if (webglRef.current) {
+        try { webglRef.current.clearTextureAtlas(); } catch {}
+      }
+      term.refresh(0, term.rows - 1);
+    });
+  }, [terminalFontSize]);
+
+  // visible 变化时重新 fit、清除纹理缓存并 refresh
+  useEffect(() => {
+    if (visible && fitRef.current && termRef.current) {
+      const term = termRef.current;
       requestAnimationFrame(() => {
         try { fitRef.current?.fit(); } catch {}
+        if (webglRef.current) {
+          try { webglRef.current.clearTextureAtlas(); } catch {}
+        }
+        term.refresh(0, term.rows - 1);
       });
     }
   }, [visible]);
@@ -269,7 +339,10 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   return (
     <div
       className="absolute inset-0 overflow-hidden"
-      style={{ display: visible ? 'block' : 'none' }}
+      style={{ 
+        visibility: visible ? 'visible' : 'hidden',
+        zIndex: visible ? 1 : 0
+      }}
     >
       <div ref={containerRef} className="h-full w-full" />
       {dragging && visible && (

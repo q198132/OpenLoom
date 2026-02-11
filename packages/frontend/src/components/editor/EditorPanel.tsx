@@ -4,6 +4,7 @@ import Editor, { DiffEditor, type OnMount } from '@monaco-editor/react';
 import type { editor } from 'monaco-editor';
 import { useEditorStore } from '@/stores/editorStore';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useConfigStore, matchShortcut } from '@/stores/configStore';
 import * as api from '@/lib/api';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import TabBar from './TabBar';
@@ -18,6 +19,7 @@ export default function EditorPanel() {
   const { tabs, activeTab, fileContents, openFile, updateContent, commitDiff, closeCommitDiff } =
     useEditorStore();
   const theme = useLayoutStore((s) => s.theme);
+  const shortcuts = useConfigStore((s) => s.config.shortcuts);
   const pendingReviews = useDiffReviewStore((s) => s.pendingReviews);
   const showDiff = pendingReviews.length > 0;
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -38,10 +40,10 @@ export default function EditorPanel() {
     return () => window.removeEventListener('open-file', handler);
   }, [openFile]);
 
-  // Ctrl+S 保存（仅文本文件）
+  // 保存文件快捷键
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if (matchShortcut(e, shortcuts.saveFile)) {
         e.preventDefault();
         if (!activeTab) return;
         if (activeViewType === 'image' || activeViewType === 'docx') return;
@@ -52,12 +54,12 @@ export default function EditorPanel() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [activeTab, activeViewType, fileContents]);
+  }, [activeTab, activeViewType, fileContents, shortcuts.saveFile]);
 
-  // Ctrl+Shift+F 全局搜索
+  // 全局搜索快捷键
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+      if (matchShortcut(e, shortcuts.globalSearch)) {
         e.preventDefault();
         const layout = useLayoutStore.getState();
         layout.setSidebarTab('search');
@@ -66,7 +68,7 @@ export default function EditorPanel() {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [shortcuts.globalSearch]);
 
   const handleMount: OnMount = (editor, monaco) => {
     editorRef.current = editor;
