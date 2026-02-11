@@ -237,6 +237,19 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     }
   }, [visible]);
 
+  // 监听 Tauri 原生文件拖放事件（支持文件和文件夹路径）
+  useEffect(() => {
+    let unlisten: (() => void) | null = null;
+    listen<string[]>('tauri://file-drop', (event) => {
+      if (visible && event.payload.length > 0) {
+        setDragging(false);
+        const paths = event.payload.map(p => p.includes(' ') ? `"${p}"` : p).join(' ');
+        api.ptyWrite(id, paths).catch(() => {});
+      }
+    }).then((fn) => { unlisten = fn; });
+    return () => { unlisten?.(); };
+  }, [id, visible]);
+
   const handleOverlayDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'copy';
@@ -245,10 +258,12 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const handleOverlayDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
+    // 应用内部拖拽（文件树）通过 web dataTransfer 传递路径
     const filePath = e.dataTransfer.getData('text/plain');
     if (filePath) {
       api.ptyWrite(id, filePath).catch(() => {});
     }
+    // 系统文件管理器拖入的文件/文件夹由 tauri://file-drop 事件处理
   };
 
   return (

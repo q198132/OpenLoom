@@ -163,9 +163,8 @@ export default function FileTreeItem({
           isSelected ? 'bg-surface0 text-accent' : 'text-subtext1'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
-        draggable={!node.isDirectory}
+        draggable
         onDragStart={(e) => {
-          if (node.isDirectory) return;
           const root = useWorkspaceStore.getState().currentPath;
           const abs = root ? `${root}/${node.path}` : node.path;
           e.dataTransfer.setData('text/plain', abs);
