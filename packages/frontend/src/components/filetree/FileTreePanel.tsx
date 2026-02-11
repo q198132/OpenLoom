@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FolderTree, RefreshCw, FilePlus, FolderPlus, ChevronsDownUp } from 'lucide-react';
+import { FolderTree, RefreshCw, FilePlus, FolderPlus, ChevronsDownUp, Server, FolderOpen } from 'lucide-react';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
+import { useSSHStore } from '@/stores/sshStore';
 import * as api from '@/lib/api';
 import { useGitStore } from '@/stores/gitStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
@@ -11,10 +12,42 @@ import InlineInput from './InlineInput';
 import type { FileNode, ControlMessage } from '@openloom/shared';
 
 export default function FileTreePanel() {
-  const { nodes, loading, refreshRoot, collapseAll, createFile, createDir, renameNode, deleteNode } = useFileTreeStore();
+  const { nodes, loading, isRemote, remoteRoot, refreshRoot, collapseAll, createFile, createDir, renameNode, deleteNode } = useFileTreeStore();
   const { files: gitFiles, fetchStatus: fetchGitStatus } = useGitStore();
   const currentPath = useWorkspaceStore((s) => s.currentPath);
+  const sshSession = useSSHStore((s) => s.session);
+  const sshConnections = useSSHStore((s) => s.connections);
+  const sshWorkingDir = useSSHStore((s) => s.workingDir);
+  const setWorkingDir = useSSHStore((s) => s.setWorkingDir);
   const prevPathRef = useRef(currentPath);
+  const prevSessionRef = useRef(sshSession?.connectionId);
+
+  // 远程目录输入状态
+  const [showDirInput, setShowDirInput] = useState(false);
+  const [dirInput, setDirInput] = useState('');
+
+  // 获取当前连接名称
+  const activeConnection = sshSession?.status === 'connected'
+    ? sshConnections.find(c => c.id === sshSession.connectionId)
+    : null;
+
+  // 打开远程文件夹
+  const handleOpenRemoteFolder = async () => {
+    let path = dirInput.trim();
+    if (!path) return;
+
+    // 如果不是绝对路径，自动添加当前工作目录前缀
+    if (!path.startsWith('/')) {
+      const currentDir = sshWorkingDir || '/';
+      path = currentDir.endsWith('/')
+        ? currentDir + path
+        : currentDir + '/' + path;
+    }
+
+    console.log('[FileTree] Opening remote folder:', path);
+    await setWorkingDir(path);
+    setShowDirInput(false);
+  };
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
@@ -51,6 +84,14 @@ export default function FileTreePanel() {
     }
     prevPathRef.current = currentPath;
   }, [currentPath, refreshRoot, fetchGitStatus]);
+
+  // SSH 连接状态变化时刷新文件树
+  useEffect(() => {
+    if (prevSessionRef.current !== sshSession?.connectionId) {
+      refreshRoot();
+    }
+    prevSessionRef.current = sshSession?.connectionId;
+  }, [sshSession?.connectionId, refreshRoot]);
 
   const handleFileClick = (path: string) => {
     window.dispatchEvent(
@@ -141,10 +182,71 @@ export default function FileTreePanel() {
     <div className="h-full bg-mantle flex flex-col">
       <div className="flex items-center justify-between h-9 px-3 border-b border-surface0">
         <div className="flex items-center gap-2 text-xs font-medium text-subtext0 uppercase tracking-wider">
-          <FolderTree size={14} />
-          <span>资源管理器</span>
+          {isRemote ? (
+            <>
+              <Server size={14} className="text-green" />
+              <span className="text-green">SSH: {activeConnection?.name || '远程'}</span>
+            </>
+          ) : (
+            <>
+              <FolderTree size={14} />
+              <span>资源管理器</span>
+            </>
+          )}
         </div>
+        {isRemote && (
+          <button
+            onClick={() => {
+              setDirInput(sshWorkingDir || '~');
+              setShowDirInput(true);
+            }}
+            className="p-1 rounded hover:bg-surface0 text-overlay0 hover:text-text"
+            title="打开远程文件夹"
+          >
+            <FolderOpen size={14} />
+          </button>
+        )}
       </div>
+
+      {/* 远程工作目录显示和切换 */}
+      {isRemote && (
+        <div className="px-3 py-1.5 border-b border-surface0 bg-surface0/30">
+          {showDirInput ? (
+            <div className="flex gap-1">
+              <input
+                type="text"
+                value={dirInput}
+                onChange={(e) => setDirInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleOpenRemoteFolder();
+                  if (e.key === 'Escape') setShowDirInput(false);
+                }}
+                placeholder="输入远程目录路径"
+                className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded border border-surface1 focus:border-accent outline-none"
+                autoFocus
+              />
+              <button
+                onClick={handleOpenRemoteFolder}
+                className="px-2 py-1 text-xs bg-accent/20 text-accent rounded hover:bg-accent/30"
+              >
+                打开
+              </button>
+            </div>
+          ) : (
+            <div
+              className="text-xs text-overlay1 truncate cursor-pointer hover:text-text"
+              onClick={() => {
+                setDirInput(sshWorkingDir || '~');
+                setShowDirInput(true);
+              }}
+              title={sshWorkingDir || '点击设置目录'}
+            >
+              📁 {sshWorkingDir || '~'}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between h-7 px-3 group">
         <span className="text-[11px] font-semibold text-subtext1 uppercase tracking-wider">文件</span>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">

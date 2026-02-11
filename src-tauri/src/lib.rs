@@ -6,12 +6,14 @@ mod pty;
 use tauri::Manager;
 use state::AppState;
 use pty::PtyManager;
+use commands::ssh::SSHManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(PtyManager::new())
+        .manage(SSHManager::new())
         .invoke_handler(tauri::generate_handler![
             // files
             commands::files::get_file_tree,
@@ -54,6 +56,25 @@ pub fn run() {
             // config
             commands::config::get_config,
             commands::config::save_config,
+            // ssh
+            commands::ssh::ssh_get_connections,
+            commands::ssh::ssh_add_connection,
+            commands::ssh::ssh_update_connection,
+            commands::ssh::ssh_delete_connection,
+            commands::ssh::ssh_connect,
+            commands::ssh::ssh_connect_with_password,
+            commands::ssh::ssh_disconnect,
+            commands::ssh::ssh_get_session,
+            commands::ssh::ssh_get_file_tree,
+            commands::ssh::ssh_read_file,
+            commands::ssh::ssh_write_file,
+            commands::ssh::ssh_get_working_dir,
+            commands::ssh::ssh_set_working_dir,
+            commands::ssh::ssh_git_status,
+            commands::ssh::ssh_git_log,
+            commands::ssh::ssh_git_branches,
+            commands::ssh::ssh_git_stage,
+            commands::ssh::ssh_git_commit,
         ])
         .setup(|app| {
             let config_dir = app.path().app_data_dir().ok();

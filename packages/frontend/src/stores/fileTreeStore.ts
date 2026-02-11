@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 import type { FileNode } from '@openloom/shared';
 import * as api from '@/lib/api';
+import { useSSHStore } from './sshStore';
 
 interface FileTreeState {
   nodes: FileNode[];
   expandedPaths: Set<string>;
   selectedPath: string | null;
   loading: boolean;
+  isRemote: boolean;
+  remoteRoot: string | null;  // 远程根目录
   fetchChildren: (dir?: string) => Promise<FileNode[]>;
   toggleExpand: (path: string) => void;
   collapseAll: () => void;
@@ -23,10 +26,30 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   expandedPaths: new Set(),
   selectedPath: null,
   loading: false,
+  isRemote: false,
+  remoteRoot: null,
 
   fetchChildren: async (dir = '') => {
-    const nodes = await api.getFileTree(dir || undefined) as FileNode[];
-    return nodes;
+    const sshStore = useSSHStore.getState();
+    const sshSession = sshStore.session;
+    const workingDir = sshStore.workingDir;
+    const isRemote = sshSession?.status === 'connected';
+
+    try {
+      let nodes: FileNode[];
+      if (isRemote) {
+        // SSH 模式：如果 dir 为空，使用工作目录；否则使用传入的路径
+        const path = dir || workingDir || '/';
+        nodes = await api.sshGetFileTree(path) as FileNode[];
+      } else {
+        nodes = await api.getFileTree(dir || undefined) as FileNode[];
+      }
+      console.log(`[FileTree] fetchChildren("${dir || workingDir || '/'}") returned ${nodes?.length || 0} nodes`);
+      return nodes || [];
+    } catch (error) {
+      console.error(`[FileTree] fetchChildren("${dir}") error:`, error);
+      return [];
+    }
   },
 
   toggleExpand: (path: string) => {
@@ -46,14 +69,24 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   collapseAll: () => set({ expandedPaths: new Set() }),
 
   refreshRoot: async () => {
-    set({ loading: true, expandedPaths: new Set(), selectedPath: null });
+    const sshStore = useSSHStore.getState();
+    const sshSession = sshStore.session;
+    const workingDir = sshStore.workingDir;
+    const isRemote = sshSession?.status === 'connected';
+
+    set({ loading: true, expandedPaths: new Set(), selectedPath: null, isRemote, remoteRoot: workingDir });
     const nodes = await get().fetchChildren('');
     set({ nodes, loading: false });
   },
 
   createFile: async (filePath: string) => {
     try {
-      await api.createFile(filePath);
+      const isRemote = get().isRemote;
+      if (isRemote) {
+        await api.sshWriteFile(filePath, '');
+      } else {
+        await api.createFile(filePath);
+      }
       await get().refreshRoot();
       return true;
     } catch { return false; }
@@ -61,24 +94,33 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
 
   createDir: async (dirPath: string) => {
     try {
-      await api.createDir(dirPath);
-      await get().refreshRoot();
+      // SSH 暂不支持创建目录
+      if (!get().isRemote) {
+        await api.createDir(dirPath);
+        await get().refreshRoot();
+      }
       return true;
     } catch { return false; }
   },
 
   renameNode: async (oldPath: string, newPath: string) => {
     try {
-      await api.renameNode(oldPath, newPath);
-      await get().refreshRoot();
+      // SSH 暂不支持重命名
+      if (!get().isRemote) {
+        await api.renameNode(oldPath, newPath);
+        await get().refreshRoot();
+      }
       return true;
     } catch { return false; }
   },
 
   deleteNode: async (nodePath: string) => {
     try {
-      await api.deleteNode(nodePath);
-      await get().refreshRoot();
+      // SSH 暂不支持删除
+      if (!get().isRemote) {
+        await api.deleteNode(nodePath);
+        await get().refreshRoot();
+      }
       return true;
     } catch { return false; }
   },

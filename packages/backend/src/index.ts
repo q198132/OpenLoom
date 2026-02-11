@@ -8,6 +8,7 @@ import fileRoutes from './api/fileRoutes.js';
 import gitRoutes from './api/gitRoutes.js';
 import aiRoutes from './api/aiRoutes.js';
 import workspaceRoutes from './api/workspaceRoutes.js';
+import sshRoutes from './api/sshRoutes.js';
 import { startFileWatcher } from './watcher/fileWatcher.js';
 import { workspaceManager } from './workspace/workspaceManager.js';
 
@@ -31,6 +32,9 @@ app.use(`${API_PREFIX}/ai`, aiRoutes);
 
 // 工作区 API
 app.use(`${API_PREFIX}/workspace`, workspaceRoutes);
+
+// SSH API
+app.use(`${API_PREFIX}/ssh`, sshRoutes);
 
 const server = createServer(app);
 const ptyManager = new PtyManager();

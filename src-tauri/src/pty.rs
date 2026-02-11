@@ -102,6 +102,96 @@ impl PtyManager {
         Ok(id)
     }
 
+    /// 启动 SSH 终端
+    pub fn spawn_ssh(
+        &self,
+        app: AppHandle,
+        host: String,
+        port: u16,
+        username: String,
+        private_key_path: Option<String>,
+    ) -> Result<u32, String> {
+        let id = self.next_id.fetch_add(1, Ordering::SeqCst);
+
+        let pty_system = native_pty_system();
+        let pair = pty_system
+            .openpty(PtySize {
+                rows: 24,
+                cols: 80,
+                pixel_width: 0,
+                pixel_height: 0,
+            })
+            .map_err(|e| e.to_string())?;
+
+        // 构建 SSH 命令
+        let mut cmd = CommandBuilder::new("ssh");
+
+        // 基本参数 - 注意 arg() 返回 () 需要分开调用
+        cmd.arg("-p");
+        cmd.arg(port.to_string());
+
+        // 强制分配 PTY
+        cmd.arg("-t");
+
+        // 禁用严格主机检查（首次连接）
+        cmd.arg("-o");
+        cmd.arg("StrictHostKeyChecking=accept-new");
+
+        // 连接超时
+        cmd.arg("-o");
+        cmd.arg("ConnectTimeout=30");
+
+        // 私钥文件
+        if let Some(ref key_path) = private_key_path {
+            cmd.arg("-i");
+            cmd.arg(key_path);
+        }
+
+        // 用户@主机
+        cmd.arg(format!("{}@{}", username, host));
+
+        // 设置终端类型
+        cmd.env("TERM", "xterm-256color");
+        #[cfg(target_os = "macos")]
+        {
+            cmd.env("LANG", "en_US.UTF-8");
+            cmd.env("LC_ALL", "en_US.UTF-8");
+        }
+
+        let child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
+        drop(pair.slave);
+
+        let mut reader = pair.master.try_clone_reader().map_err(|e| e.to_string())?;
+        let writer = pair.master.take_writer().map_err(|e| e.to_string())?;
+
+        let instance = PtyInstance {
+            writer,
+            master: pair.master,
+            child,
+        };
+
+        self.instances.lock().unwrap().insert(id, instance);
+
+        // 读取线程
+        let app_clone = app.clone();
+        std::thread::spawn(move || {
+            let mut buf = [0u8; 4096];
+            loop {
+                match reader.read(&mut buf) {
+                    Ok(0) => break,
+                    Ok(n) => {
+                        let data = String::from_utf8_lossy(&buf[..n]).to_string();
+                        let _ = app_clone.emit("pty-output", PtyOutputPayload { id, data });
+                    }
+                    Err(_) => break,
+                }
+            }
+            let _ = app_clone.emit("pty-exit", PtyExitPayload { id });
+        });
+
+        Ok(id)
+    }
+
     pub fn write_input(&self, id: u32, data: &str) -> Result<(), String> {
         let mut guard = self.instances.lock().unwrap();
         if let Some(inst) = guard.get_mut(&id) {

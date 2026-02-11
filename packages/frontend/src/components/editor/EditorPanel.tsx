@@ -5,6 +5,7 @@ import type { editor } from 'monaco-editor';
 import { useEditorStore } from '@/stores/editorStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useConfigStore, matchShortcut } from '@/stores/configStore';
+import { useSSHStore } from '@/stores/sshStore';
 import * as api from '@/lib/api';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import TabBar from './TabBar';
@@ -42,14 +43,23 @@ export default function EditorPanel() {
 
   // 保存文件快捷键
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
+    const handler = async (e: KeyboardEvent) => {
       if (matchShortcut(e, shortcuts.saveFile)) {
         e.preventDefault();
         if (!activeTab) return;
         if (activeViewType === 'image' || activeViewType === 'docx') return;
         const content = fileContents.get(activeTab);
         if (content === undefined) return;
-        api.writeFile(activeTab, content);
+
+        // 检查是否为远程模式
+        const sshSession = useSSHStore.getState().session;
+        const isRemote = sshSession?.status === 'connected';
+
+        if (isRemote) {
+          await api.sshWriteFile(activeTab, content);
+        } else {
+          await api.writeFile(activeTab, content);
+        }
       }
     };
     window.addEventListener('keydown', handler);

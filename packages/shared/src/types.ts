@@ -51,3 +51,31 @@ export interface EditorTab {
   isDirty: boolean;
   viewType: ViewType;
 }
+
+// SSH 连接相关类型
+export interface SSHConnection {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  username: string;
+  authType: 'password' | 'key';
+  privateKeyPath?: string;
+  password?: string;
+  source: 'config' | 'manual';
+}
+
+export interface SSHSession {
+  connectionId: string;
+  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  lastError?: string;
+  connectedAt?: string;
+}
+
+export interface SSHConfigHost {
+  name: string;
+  host: string;
+  port: number;
+  username: string;
+  identityFile?: string;
+}

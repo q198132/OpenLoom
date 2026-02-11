@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-type SidebarTab = 'files' | 'git' | 'search';
+type SidebarTab = 'files' | 'git' | 'search' | 'ssh';
 
 interface LayoutState {
   sidebarVisible: boolean;

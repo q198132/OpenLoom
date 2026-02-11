@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { EditorTab, ViewType } from '@openloom/shared';
 import * as api from '@/lib/api';
+import { useSSHStore } from './sshStore';
 
 const EXT_LANG_MAP: Record<string, string> = {
   ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript',
@@ -70,14 +71,33 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const name = path.split('/').pop() || path;
     let content = '';
 
-    if (viewType === 'image' || viewType === 'docx') {
-      const data = await api.readFileBinary(path) as { data: string; path: string };
-      if (!data.data) return;
-      content = data.data; // base64
+    // 检查是否为远程模式
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    if (isRemote) {
+      // 远程模式：使用 SSH API
+      if (viewType === 'image' || viewType === 'docx') {
+        // 远程模式暂不支持二进制文件
+        return;
+      } else {
+        try {
+          content = await api.sshReadFile(path);
+        } catch {
+          return;
+        }
+      }
     } else {
-      const data = await api.readFile(path) as { content: string; path: string };
-      if (!data.content && data.content !== '') return;
-      content = data.content;
+      // 本地模式
+      if (viewType === 'image' || viewType === 'docx') {
+        const data = await api.readFileBinary(path) as { data: string; path: string };
+        if (!data.data) return;
+        content = data.data; // base64
+      } else {
+        const data = await api.readFile(path) as { content: string; path: string };
+        if (!data.content && data.content !== '') return;
+        content = data.content;
+      }
     }
 
     const tab: EditorTab = {

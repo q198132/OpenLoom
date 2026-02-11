@@ -1,9 +1,11 @@
-import { FolderTree, GitBranch, Search } from 'lucide-react';
+import { FolderTree, GitBranch, Search, Server } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useGitStore } from '@/stores/gitStore';
+import { useSSHStore } from '@/stores/sshStore';
 import FileTreePanel from '../filetree/FileTreePanel';
 import GitPanel from '../git/GitPanel';
 import SearchPanel from '../search/SearchPanel';
+import SSHPanel from '../ssh/SSHPanel';
 
 function SidebarIcon({
   active,
@@ -35,6 +37,8 @@ export default function SidebarContainer() {
   const { sidebarTab, setSidebarTab } = useLayoutStore();
   const gitFiles = useGitStore((s) => s.files);
   const changeCount = gitFiles.length;
+  const sshSession = useSSHStore((s) => s.session);
+  const isConnected = sshSession?.status === 'connected';
 
   return (
     <div className="h-full flex">
@@ -68,6 +72,18 @@ export default function SidebarContainer() {
         >
           <Search size={18} />
         </SidebarIcon>
+        <SidebarIcon
+          active={sidebarTab === 'ssh'}
+          onClick={() => setSidebarTab('ssh')}
+          title="SSH 连接"
+        >
+          <div className="relative">
+            <Server size={18} />
+            {isConnected && (
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green" />
+            )}
+          </div>
+        </SidebarIcon>
       </div>
 
       {/* 面板内容 */}
@@ -75,6 +91,7 @@ export default function SidebarContainer() {
         {sidebarTab === 'files' && <FileTreePanel />}
         {sidebarTab === 'git' && <GitPanel />}
         {sidebarTab === 'search' && <SearchPanel />}
+        {sidebarTab === 'ssh' && <SSHPanel />}
       </div>
     </div>
   );

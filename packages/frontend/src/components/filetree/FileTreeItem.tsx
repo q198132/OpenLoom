@@ -126,15 +126,25 @@ export default function FileTreeItem({
 
   useEffect(() => {
     if (isExpanded && node.isDirectory && !loaded) {
-      fetchChildren(node.path).then((nodes) => {
-        setChildren(nodes);
-        setLoaded(true);
-      });
+      console.log(`[FileTreeItem] Loading children for: ${node.path}`);
+      fetchChildren(node.path)
+        .then((nodes) => {
+          console.log(`[FileTreeItem] Loaded ${nodes?.length || 0} children for: ${node.path}`);
+          setChildren(nodes || []);
+          setLoaded(true);
+        })
+        .catch((error) => {
+          console.error(`[FileTreeItem] Error loading children for ${node.path}:`, error);
+          setChildren([]);
+          setLoaded(true);
+        });
     }
   }, [isExpanded, node.isDirectory, node.path, loaded, fetchChildren]);
 
   const handleClick = () => {
+    console.log(`[FileTreeItem] handleClick: ${node.path}, isDirectory: ${node.isDirectory}`);
     if (node.isDirectory) {
+      console.log(`[FileTreeItem] Toggling expand for: ${node.path}, current isExpanded: ${isExpanded}`);
       toggleExpand(node.path);
     } else {
       setSelected(node.path);

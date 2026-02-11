@@ -172,3 +172,126 @@ export async function getConfig(): Promise<AppConfig> {
 export async function saveConfig(config: AppConfig) {
   return invoke('save_config', { config });
 }
+
+// ===== SSH =====
+
+export interface SSHConnection {
+  id: string;
+  name: string;
+  host: string;
+  port: number;
+  username: string;
+  authType: 'password' | 'key';
+  privateKeyPath?: string;
+  password?: string;
+  source: 'config' | 'manual';
+}
+
+export interface SSHSession {
+  connectionId: string;
+  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  lastError?: string;
+  connectedAt?: string;
+}
+
+export async function sshGetConnections(): Promise<SSHConnection[]> {
+  return invoke('ssh_get_connections');
+}
+
+export async function sshAddConnection(conn: {
+  name: string;
+  host: string;
+  port?: number;
+  username: string;
+  authType: string;
+  privateKeyPath?: string;
+  password?: string;
+}): Promise<SSHConnection> {
+  return invoke('ssh_add_connection', {
+    name: conn.name,
+    host: conn.host,
+    port: conn.port,
+    username: conn.username,
+    authType: conn.authType,
+    privateKeyPath: conn.privateKeyPath,
+    password: conn.password,
+  });
+}
+
+export async function sshUpdateConnection(
+  id: string,
+  updates: Partial<SSHConnection>
+): Promise<SSHConnection> {
+  return invoke('ssh_update_connection', {
+    id,
+    name: updates.name,
+    host: updates.host,
+    port: updates.port,
+    username: updates.username,
+    authType: updates.authType,
+    privateKeyPath: updates.privateKeyPath,
+    password: updates.password,
+  });
+}
+
+export async function sshDeleteConnection(id: string): Promise<void> {
+  return invoke('ssh_delete_connection', { id });
+}
+
+export async function sshConnect(id: string): Promise<SSHSession> {
+  return invoke('ssh_connect', { id });
+}
+
+export async function sshConnectWithPassword(id: string, password: string): Promise<SSHSession> {
+  return invoke('ssh_connect_with_password', { id, password });
+}
+
+export async function sshDisconnect(): Promise<void> {
+  return invoke('ssh_disconnect');
+}
+
+export async function sshGetSession(): Promise<SSHSession | null> {
+  return invoke('ssh_get_session');
+}
+
+export async function sshGetFileTree(dir?: string): Promise<any[]> {
+  return invoke('ssh_get_file_tree', { dir: dir || null });
+}
+
+export async function sshReadFile(path: string): Promise<string> {
+  return invoke('ssh_read_file', { path });
+}
+
+export async function sshWriteFile(path: string, content: string): Promise<void> {
+  return invoke('ssh_write_file', { path, content });
+}
+
+// SSH 工作目录
+export async function sshGetWorkingDir(): Promise<string | null> {
+  return invoke('ssh_get_working_dir');
+}
+
+export async function sshSetWorkingDir(dir: string): Promise<void> {
+  return invoke('ssh_set_working_dir', { dir });
+}
+
+// SSH Git 命令
+export async function sshGitStatus(): Promise<string> {
+  return invoke('ssh_git_status');
+}
+
+export async function sshGitLog(): Promise<string> {
+  return invoke('ssh_git_log');
+}
+
+export async function sshGitBranches(): Promise<string> {
+  return invoke('ssh_git_branches');
+}
+
+export async function sshGitStage(paths: string[]): Promise<string> {
+  return invoke('ssh_git_stage', { paths });
+}
+
+export async function sshGitCommit(message: string): Promise<string> {
+  return invoke('ssh_git_commit', { message });
+}
