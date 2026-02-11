@@ -2352,7 +2352,7 @@ dependencies = [
 
 [[package]]
 name = "openloom"
-version = "0.1.5"
+version = "0.1.7"
 dependencies = [
  "base64 0.22.1",
  "chrono",

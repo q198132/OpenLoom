@@ -1,6 +1,81 @@
 import { create } from 'zustand';
 import type { GitFileStatus, GitLogEntry, GitBranchInfo } from '@openloom/shared';
 import * as api from '@/lib/api';
+import { useSSHStore } from './sshStore';
+
+// 解析 SSH git status 输出
+function parseSshGitStatus(output: string): GitFileStatus[] {
+  const files: GitFileStatus[] = [];
+  for (const line of output.trim().split('\n')) {
+    if (!line.trim()) continue;
+    // 格式: XY path (XY 是状态码，如 M, A, D, ?? 等)
+    const status = line.substring(0, 2).trim();
+    const path = line.substring(3).trim();
+    if (!path) continue;
+
+    let fileStatus: 'untracked' | 'added' | 'modified' | 'deleted' | 'renamed' = 'modified';
+    let staged = false;
+
+    if (status === '??') {
+      fileStatus = 'untracked';
+    } else if (status === 'A ' || status === 'M ') {
+      fileStatus = status === 'A ' ? 'added' : 'modified';
+      staged = true;
+    } else if (status === ' D') {
+      fileStatus = 'deleted';
+    } else if (status === 'D ') {
+      fileStatus = 'deleted';
+      staged = true;
+    } else if (status.startsWith('R')) {
+      fileStatus = 'renamed';
+    } else if (status.includes('M')) {
+      fileStatus = 'modified';
+      staged = status[0] !== ' ' && status[0] !== '?';
+    }
+
+    files.push({ path, status: fileStatus, staged });
+  }
+  return files;
+}
+
+// 解析 SSH git log 输出
+function parseSshGitLog(output: string): GitLogEntry[] {
+  const entries: GitLogEntry[] = [];
+  for (const line of output.trim().split('\n')) {
+    if (!line.trim()) continue;
+    // 格式: hash|shortHash|subject|author|date
+    const parts = line.split('|');
+    if (parts.length >= 5) {
+      entries.push({
+        hash: parts[0],
+        shortHash: parts[1],
+        subject: parts[2],
+        author: parts[3],
+        date: parts[4],
+      });
+    }
+  }
+  return entries;
+}
+
+// 解析 SSH git branches 输出
+function parseSshGitBranches(output: string): GitBranchInfo {
+  const lines = output.trim().split('\n');
+  const branches: string[] = [];
+  let current = '';
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith('* ')) {
+      current = trimmed.substring(2);
+      branches.push(current);
+    } else if (trimmed && !trimmed.startsWith('remotes/')) {
+      branches.push(trimmed);
+    }
+  }
+
+  return { current, branches };
+}
 
 interface GitState {
   files: GitFileStatus[];
@@ -44,27 +119,65 @@ export const useGitStore = create<GitState>((set, get) => ({
   clearError: () => set({ error: null }),
 
   fetchStatus: async () => {
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
     try {
-      const files = await api.gitStatus() as GitFileStatus[];
-      if (Array.isArray(files)) set({ files });
+      if (isRemote) {
+        // SSH 模式
+        const output = await api.sshGitStatus();
+        const files = parseSshGitStatus(output);
+        set({ files });
+      } else {
+        // 本地模式
+        const files = await api.gitStatus() as GitFileStatus[];
+        if (Array.isArray(files)) set({ files });
+      }
     } catch { /* ignore */ }
   },
 
   fetchBranch: async () => {
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
     try {
-      const branch = await api.gitBranches() as GitBranchInfo;
-      if (branch.current) set({ branch });
+      if (isRemote) {
+        const output = await api.sshGitBranches();
+        const branch = parseSshGitBranches(output);
+        if (branch.current) set({ branch });
+      } else {
+        const branch = await api.gitBranches() as GitBranchInfo;
+        if (branch.current) set({ branch });
+      }
     } catch { /* ignore */ }
   },
 
   fetchLog: async () => {
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
     try {
-      const log = await api.gitLog() as GitLogEntry[];
-      if (Array.isArray(log)) set({ log });
+      if (isRemote) {
+        const output = await api.sshGitLog();
+        const log = parseSshGitLog(output);
+        set({ log });
+      } else {
+        const log = await api.gitLog() as GitLogEntry[];
+        if (Array.isArray(log)) set({ log });
+      }
     } catch { /* ignore */ }
   },
 
   fetchSyncStatus: async () => {
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    // SSH 模式暂不支持同步状态
+    if (isRemote) {
+      set({ ahead: 0, behind: 0, hasRemote: false });
+      return;
+    }
+
     try {
       const { ahead, behind, hasRemote } = await api.gitSyncStatus();
       set({ ahead, behind, hasRemote });
@@ -72,37 +185,70 @@ export const useGitStore = create<GitState>((set, get) => ({
   },
 
   stageFiles: async (paths) => {
-    await api.gitStage(paths);
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    if (isRemote) {
+      await api.sshGitStage(paths);
+    } else {
+      await api.gitStage(paths);
+    }
     await get().fetchStatus();
   },
 
   stageAll: async () => {
     const unstaged = get().files.filter((f) => !f.staged).map((f) => f.path);
     if (unstaged.length === 0) return;
-    await api.gitStage(unstaged);
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    if (isRemote) {
+      await api.sshGitStage(unstaged);
+    } else {
+      await api.gitStage(unstaged);
+    }
     await get().fetchStatus();
   },
 
   unstageFiles: async (paths) => {
-    await api.gitUnstage(paths);
-    await get().fetchStatus();
+    // SSH 模式暂不支持 unstage
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    if (!isRemote) {
+      await api.gitUnstage(paths);
+      await get().fetchStatus();
+    }
   },
 
   commit: async () => {
     const msg = get().commitMessage.trim();
     if (!msg) return false;
     set({ error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
     try {
-      const data = await api.gitCommit(msg) as any;
-      if (data.ok) {
+      if (isRemote) {
+        await api.sshGitCommit(msg);
         set({ commitMessage: '' });
         await get().fetchStatus();
         await get().fetchLog();
-        await get().fetchSyncStatus();
         return true;
+      } else {
+        const data = await api.gitCommit(msg) as any;
+        if (data.ok) {
+          set({ commitMessage: '' });
+          await get().fetchStatus();
+          await get().fetchLog();
+          await get().fetchSyncStatus();
+          return true;
+        }
+        set({ error: '提交失败' });
+        return false;
       }
-      set({ error: '提交失败' });
-      return false;
     } catch (e: any) {
       set({ error: e.toString() || '提交失败' });
       return false;
@@ -111,6 +257,16 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   push: async () => {
     set({ error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    // SSH 模式暂不支持 push（需要更复杂的实现）
+    if (isRemote) {
+      set({ error: 'SSH 模式暂不支持 Push' });
+      return false;
+    }
+
     try {
       const data = await api.gitPush() as any;
       return !!data.ok;
@@ -122,6 +278,16 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   pull: async () => {
     set({ error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    // SSH 模式暂不支持 pull
+    if (isRemote) {
+      set({ error: 'SSH 模式暂不支持 Pull' });
+      return false;
+    }
+
     try {
       const data = await api.gitPull() as any;
       if (data.ok) {
@@ -139,8 +305,17 @@ export const useGitStore = create<GitState>((set, get) => ({
 
   sync: async () => {
     set({ syncing: true, error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    // SSH 模式暂不支持 sync
+    if (isRemote) {
+      set({ error: 'SSH 模式暂不支持同步', syncing: false });
+      return false;
+    }
+
     try {
-      // 先 pull 再 push
       try {
         await api.gitPull();
       } catch { /* 没有远程或无需 pull 时忽略 */ }

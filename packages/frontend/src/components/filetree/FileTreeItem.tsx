@@ -3,6 +3,7 @@ import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import type { FileNode, GitFileStatus } from '@openloom/shared';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { useSSHStore } from '@/stores/sshStore';
 import InlineInput from './InlineInput';
 
 /** 文件类型图标配置：label 显示文字，color 颜色 class */
@@ -175,9 +176,17 @@ export default function FileTreeItem({
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         draggable
         onDragStart={(e) => {
-          const root = useWorkspaceStore.getState().currentPath;
-          const abs = root ? `${root}/${node.path}` : node.path;
-          e.dataTransfer.setData('text/plain', abs);
+          // SSH 模式：node.path 已经是远程绝对路径
+          // 本地模式：需要拼接工作区路径
+          const isRemote = useFileTreeStore.getState().isRemote;
+          let path: string;
+          if (isRemote) {
+            path = node.path;  // 远程模式直接使用绝对路径
+          } else {
+            const root = useWorkspaceStore.getState().currentPath;
+            path = root ? `${root}/${node.path}` : node.path;
+          }
+          e.dataTransfer.setData('text/plain', path);
           e.dataTransfer.effectAllowed = 'copy';
         }}
         onClick={handleClick}
