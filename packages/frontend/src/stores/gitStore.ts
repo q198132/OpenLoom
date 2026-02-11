@@ -49,9 +49,10 @@ function parseSshGitLog(output: string): GitLogEntry[] {
       entries.push({
         hash: parts[0],
         shortHash: parts[1],
-        subject: parts[2],
+        message: parts[2],
         author: parts[3],
         date: parts[4],
+        refs: '',
       });
     }
   }
