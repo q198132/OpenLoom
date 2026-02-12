@@ -1,29 +1,43 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import { useConfigStore, matchShortcut } from '@/stores/configStore';
 import * as api from '@/lib/api';
 
 export default function GitCommitBox() {
-  const { files, commitMessage, setCommitMessage, commit, stageAll, ahead, behind, hasRemote, syncing, sync } = useGitStore();
+  const files = useGitStore((s) => s.files);
+  const commitMessage = useGitStore((s) => s.commitMessage);
+  const setCommitMessage = useGitStore((s) => s.setCommitMessage);
+  const commit = useGitStore((s) => s.commit);
+  const stageAll = useGitStore((s) => s.stageAll);
+  const ahead = useGitStore((s) => s.ahead);
+  const behind = useGitStore((s) => s.behind);
+  const hasRemote = useGitStore((s) => s.hasRemote);
+  const syncing = useGitStore((s) => s.syncing);
+  const sync = useGitStore((s) => s.sync);
   const [generating, setGenerating] = useState(false);
   const shortcuts = useConfigStore((s) => s.config.shortcuts);
 
   const hasStagedFiles = files.some((f) => f.staged);
   const hasUnstagedFiles = files.some((f) => !f.staged);
 
-  const handleCommit = async () => {
+  const handleCommit = useCallback(async () => {
     if (!commitMessage.trim()) return;
-    if (!hasStagedFiles && hasUnstagedFiles) {
-      await stageAll();
-    }
-    await commit();
-  };
+    // 获取最新的 files 状态
+    const currentFiles = useGitStore.getState().files;
+    const currentHasStaged = currentFiles.some((f) => f.staged);
+    const currentHasUnstaged = currentFiles.some((f) => !f.staged);
 
-  const generateCommitMessage = async () => {
+    if (!currentHasStaged && currentHasUnstaged) {
+      await useGitStore.getState().stageAll();
+    }
+    await useGitStore.getState().commit();
+  }, [commitMessage]);
+
+  const generateCommitMessage = useCallback(async () => {
     setGenerating(true);
     try {
-      // 没有暂存文件但有未暂存更改时，先自动暂存全部
+      // 获取最新的 files 状态（避免闭包陷阱）
       const currentFiles = useGitStore.getState().files;
       const hasStaged = currentFiles.some((f) => f.staged);
       const hasUnstaged = currentFiles.some((f) => !f.staged);
@@ -44,7 +58,7 @@ export default function GitCommitBox() {
       // 2. 尝试 AI 生成
       try {
         const { message } = await api.generateCommitMessage(diff, stat);
-        if (message) { setCommitMessage(message); setGenerating(false); return; }
+        if (message) { useGitStore.getState().setCommitMessage(message); setGenerating(false); return; }
       } catch (err: any) {
         console.error('AI 生成失败:', err);
         // AI 不可用，走 fallback
@@ -52,12 +66,12 @@ export default function GitCommitBox() {
 
       // 3. 规则生成 fallback
       const msg = generateByRule(stat, diffFiles);
-      setCommitMessage(msg);
+      useGitStore.getState().setCommitMessage(msg);
     } catch (err) {
       console.error('生成提交信息失败:', err);
     }
     setGenerating(false);
-  };
+  }, []);
 
   return (
     <div className="px-3 py-2 border-b border-surface0">

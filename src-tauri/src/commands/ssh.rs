@@ -689,3 +689,53 @@ pub fn ssh_git_commit(manager: State<'_, SSHManager>, message: String) -> Result
     );
     run_ssh_command(&active.connection, &cmd, None)
 }
+
+// ===== SSH 文件操作 =====
+
+#[tauri::command]
+pub fn ssh_create_dir(manager: State<'_, SSHManager>, path: String) -> Result<(), String> {
+    let session = manager.active_session.lock().map_err(|e| e.to_string())?;
+    let active = session.as_ref().ok_or("No active SSH connection")?;
+
+    let cmd = format!("mkdir -p '{}'", path.replace("'", "'\\''"));
+    run_ssh_command(&active.connection, &cmd, None)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn ssh_delete_file(manager: State<'_, SSHManager>, path: String) -> Result<(), String> {
+    let session = manager.active_session.lock().map_err(|e| e.to_string())?;
+    let active = session.as_ref().ok_or("No active SSH connection")?;
+
+    let cmd = format!("rm -f '{}'", path.replace("'", "'\\''"));
+    run_ssh_command(&active.connection, &cmd, None)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn ssh_delete_dir(manager: State<'_, SSHManager>, path: String) -> Result<(), String> {
+    let session = manager.active_session.lock().map_err(|e| e.to_string())?;
+    let active = session.as_ref().ok_or("No active SSH connection")?;
+
+    let cmd = format!("rm -rf '{}'", path.replace("'", "'\\''"));
+    run_ssh_command(&active.connection, &cmd, None)?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn ssh_rename(
+    manager: State<'_, SSHManager>,
+    old_path: String,
+    new_path: String,
+) -> Result<(), String> {
+    let session = manager.active_session.lock().map_err(|e| e.to_string())?;
+    let active = session.as_ref().ok_or("No active SSH connection")?;
+
+    let cmd = format!(
+        "mv '{}' '{}'",
+        old_path.replace("'", "'\\''"),
+        new_path.replace("'", "'\\''")
+    );
+    run_ssh_command(&active.connection, &cmd, None)?;
+    Ok(())
+}

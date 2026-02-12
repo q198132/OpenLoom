@@ -90,11 +90,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     } else {
       // 本地模式
       if (viewType === 'image' || viewType === 'docx') {
-        const data = await api.readFileBinary(path) as { data: string; path: string };
+        const data = await api.readFileBinary(path);
         if (!data.data) return;
         content = data.data; // base64
       } else {
-        const data = await api.readFile(path) as { content: string; path: string };
+        const data = await api.readFile(path);
         if (!data.content && data.content !== '') return;
         content = data.content;
       }

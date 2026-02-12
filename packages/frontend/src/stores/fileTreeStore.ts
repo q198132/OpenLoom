@@ -10,6 +10,7 @@ interface FileTreeState {
   loading: boolean;
   isRemote: boolean;
   remoteRoot: string | null;  // 远程根目录
+  error: string | null;
   fetchChildren: (dir?: string) => Promise<FileNode[]>;
   toggleExpand: (path: string) => void;
   collapseAll: () => void;
@@ -19,6 +20,7 @@ interface FileTreeState {
   createDir: (dirPath: string) => Promise<boolean>;
   renameNode: (oldPath: string, newPath: string) => Promise<boolean>;
   deleteNode: (nodePath: string) => Promise<boolean>;
+  clearError: () => void;
 }
 
 export const useFileTreeStore = create<FileTreeState>((set, get) => ({
@@ -28,6 +30,9 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   loading: false,
   isRemote: false,
   remoteRoot: null,
+  error: null,
+
+  clearError: () => set({ error: null }),
 
   fetchChildren: async (dir = '') => {
     const sshStore = useSSHStore.getState();
@@ -46,8 +51,9 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       }
       console.log(`[FileTree] fetchChildren("${dir || workingDir || '/'}") returned ${nodes?.length || 0} nodes`);
       return nodes || [];
-    } catch (error) {
+    } catch (error: any) {
       console.error(`[FileTree] fetchChildren("${dir}") error:`, error);
+      set({ error: error.message || '获取文件列表失败' });
       return [];
     }
   },
@@ -74,7 +80,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
     const workingDir = sshStore.workingDir;
     const isRemote = sshSession?.status === 'connected';
 
-    set({ loading: true, expandedPaths: new Set(), selectedPath: null, isRemote, remoteRoot: workingDir });
+    set({ loading: true, expandedPaths: new Set(), selectedPath: null, isRemote, remoteRoot: workingDir, error: null });
     const nodes = await get().fetchChildren('');
     set({ nodes, loading: false });
   },
@@ -82,6 +88,8 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
   createFile: async (filePath: string) => {
     try {
       const isRemote = get().isRemote;
+      set({ error: null });
+
       if (isRemote) {
         await api.sshWriteFile(filePath, '');
       } else {
@@ -89,39 +97,83 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       }
       await get().refreshRoot();
       return true;
-    } catch { return false; }
+    } catch (e: any) {
+      set({ error: e.message || '创建文件失败' });
+      return false;
+    }
   },
 
   createDir: async (dirPath: string) => {
     try {
-      // SSH 暂不支持创建目录
-      if (!get().isRemote) {
+      const isRemote = get().isRemote;
+      set({ error: null });
+
+      if (isRemote) {
+        await api.sshCreateDir(dirPath);
+      } else {
         await api.createDir(dirPath);
-        await get().refreshRoot();
       }
+      await get().refreshRoot();
       return true;
-    } catch { return false; }
+    } catch (e: any) {
+      set({ error: e.message || '创建目录失败' });
+      return false;
+    }
   },
 
   renameNode: async (oldPath: string, newPath: string) => {
     try {
-      // SSH 暂不支持重命名
-      if (!get().isRemote) {
+      const isRemote = get().isRemote;
+      set({ error: null });
+
+      if (isRemote) {
+        await api.sshRename(oldPath, newPath);
+      } else {
         await api.renameNode(oldPath, newPath);
-        await get().refreshRoot();
       }
+      await get().refreshRoot();
       return true;
-    } catch { return false; }
+    } catch (e: any) {
+      set({ error: e.message || '重命名失败' });
+      return false;
+    }
   },
 
   deleteNode: async (nodePath: string) => {
     try {
-      // SSH 暂不支持删除
-      if (!get().isRemote) {
+      const isRemote = get().isRemote;
+      const state = get();
+      set({ error: null });
+
+      // 查找节点以判断是文件还是目录
+      const findNode = (nodes: FileNode[], path: string): FileNode | null => {
+        for (const node of nodes) {
+          if (node.path === path) return node;
+          if (node.children) {
+            const found = findNode(node.children, path);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      const node = findNode(state.nodes, nodePath);
+      const isDirectory = node?.isDirectory ?? false;
+
+      if (isRemote) {
+        if (isDirectory) {
+          await api.sshDeleteDir(nodePath);
+        } else {
+          await api.sshDeleteFile(nodePath);
+        }
+      } else {
         await api.deleteNode(nodePath);
-        await get().refreshRoot();
       }
+      await get().refreshRoot();
       return true;
-    } catch { return false; }
+    } catch (e: any) {
+      set({ error: e.message || '删除失败' });
+      return false;
+    }
   },
 }));

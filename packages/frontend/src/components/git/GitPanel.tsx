@@ -17,6 +17,11 @@ export default function GitPanel() {
   const [graphRatio, _setGraphRatio] = useState(_graphRatio);
   const containerRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
+  // 保存事件处理函数的引用，用于清理
+  const dragHandlersRef = useRef<{ onMove: ((ev: MouseEvent) => void) | null; onUp: (() => void) | null }>({
+    onMove: null,
+    onUp: null,
+  });
 
   const setGraphOpen = useCallback((v: boolean) => { _graphOpen = v; _setGraphOpen(v); }, []);
   const setGraphRatio = useCallback((v: number) => { _graphRatio = v; _setGraphRatio(v); }, []);
@@ -28,6 +33,18 @@ export default function GitPanel() {
     fetchSyncStatus();
   }, [fetchStatus, fetchBranch, fetchLog, fetchSyncStatus]);
 
+  // 组件卸载时清理拖拽事件监听器
+  useEffect(() => {
+    return () => {
+      if (dragHandlersRef.current.onMove) {
+        window.removeEventListener('mousemove', dragHandlersRef.current.onMove);
+      }
+      if (dragHandlersRef.current.onUp) {
+        window.removeEventListener('mouseup', dragHandlersRef.current.onUp);
+      }
+    };
+  }, []);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await Promise.all([fetchStatus(), fetchBranch(), fetchLog(), fetchSyncStatus()]);
@@ -37,6 +54,15 @@ export default function GitPanel() {
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     dragging.current = true;
+
+    // 清理旧的事件监听器
+    if (dragHandlersRef.current.onMove) {
+      window.removeEventListener('mousemove', dragHandlersRef.current.onMove);
+    }
+    if (dragHandlersRef.current.onUp) {
+      window.removeEventListener('mouseup', dragHandlersRef.current.onUp);
+    }
+
     const onMove = (ev: MouseEvent) => {
       if (!dragging.current || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
@@ -44,14 +70,21 @@ export default function GitPanel() {
       const ratio = 1 - y / rect.height;
       setGraphRatio(Math.max(0.15, Math.min(0.75, ratio)));
     };
+
     const onUp = () => {
       dragging.current = false;
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
+      dragHandlersRef.current.onMove = null;
+      dragHandlersRef.current.onUp = null;
     };
+
+    dragHandlersRef.current.onMove = onMove;
+    dragHandlersRef.current.onUp = onUp;
+
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
-  }, []);
+  }, [setGraphRatio]);
 
   return (
     <div className="h-full bg-mantle flex flex-col">

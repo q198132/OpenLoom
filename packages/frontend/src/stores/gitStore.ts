@@ -128,13 +128,21 @@ export const useGitStore = create<GitState>((set, get) => ({
         // SSH 模式
         const output = await api.sshGitStatus();
         const files = parseSshGitStatus(output);
-        set({ files });
+        set({ files, error: null });
       } else {
         // 本地模式
         const files = await api.gitStatus() as GitFileStatus[];
-        if (Array.isArray(files)) set({ files });
+        if (Array.isArray(files)) set({ files, error: null });
       }
-    } catch { /* ignore */ }
+    } catch (e: any) {
+      // Git 状态获取失败，可能是非 Git 目录，静默处理
+      set({ files: [] });
+      if (isRemote && e.message?.includes('Not a git repository')) {
+        // SSH 远程非 Git 目录，正常情况
+      } else if (!e.message?.includes('Not a git repository')) {
+        console.warn('[Git] 获取状态失败:', e.message || e);
+      }
+    }
   },
 
   fetchBranch: async () => {
@@ -145,12 +153,18 @@ export const useGitStore = create<GitState>((set, get) => ({
       if (isRemote) {
         const output = await api.sshGitBranches();
         const branch = parseSshGitBranches(output);
-        if (branch.current) set({ branch });
+        if (branch.current) set({ branch, error: null });
       } else {
         const branch = await api.gitBranches() as GitBranchInfo;
-        if (branch.current) set({ branch });
+        if (branch.current) set({ branch, error: null });
       }
-    } catch { /* ignore */ }
+    } catch (e: any) {
+      // 分支信息获取失败，静默处理
+      set({ branch: null });
+      if (!e.message?.includes('Not a git repository')) {
+        console.warn('[Git] 获取分支信息失败:', e.message || e);
+      }
+    }
   },
 
   fetchLog: async () => {
@@ -161,12 +175,18 @@ export const useGitStore = create<GitState>((set, get) => ({
       if (isRemote) {
         const output = await api.sshGitLog();
         const log = parseSshGitLog(output);
-        set({ log });
+        set({ log, error: null });
       } else {
         const log = await api.gitLog() as GitLogEntry[];
-        if (Array.isArray(log)) set({ log });
+        if (Array.isArray(log)) set({ log, error: null });
       }
-    } catch { /* ignore */ }
+    } catch (e: any) {
+      // 日志获取失败，静默处理
+      set({ log: [] });
+      if (!e.message?.includes('Not a git repository')) {
+        console.warn('[Git] 获取日志失败:', e.message || e);
+      }
+    }
   },
 
   fetchSyncStatus: async () => {
@@ -181,8 +201,14 @@ export const useGitStore = create<GitState>((set, get) => ({
 
     try {
       const { ahead, behind, hasRemote } = await api.gitSyncStatus();
-      set({ ahead, behind, hasRemote });
-    } catch { /* ignore */ }
+      set({ ahead, behind, hasRemote, error: null });
+    } catch (e: any) {
+      // 同步状态获取失败，可能是无远程仓库
+      set({ ahead: 0, behind: 0, hasRemote: false });
+      if (!e.message?.includes('No remote')) {
+        console.warn('[Git] 获取同步状态失败:', e.message || e);
+      }
+    }
   },
 
   stageFiles: async (paths) => {
@@ -317,9 +343,13 @@ export const useGitStore = create<GitState>((set, get) => ({
     }
 
     try {
+      // 尝试 pull，失败时继续尝试 push
       try {
         await api.gitPull();
-      } catch { /* 没有远程或无需 pull 时忽略 */ }
+      } catch (pullError: any) {
+        // Pull 失败可能是没有远程分支差异或网络问题，继续尝试 push
+        console.warn('[Git] Pull 失败，继续尝试 Push:', pullError.message || pullError);
+      }
       const data = await api.gitPush() as any;
       if (data.ok) {
         await Promise.all([get().fetchStatus(), get().fetchLog(), get().fetchSyncStatus()]);

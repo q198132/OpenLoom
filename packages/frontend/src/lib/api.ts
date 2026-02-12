@@ -1,44 +1,52 @@
 import { invoke } from '@tauri-apps/api/core';
+import type { FileNode, GitFileStatus, GitLogEntry, GitBranchInfo } from '@openloom/shared';
 
 // ===== Files =====
 
-export async function getFileTree(dir?: string) {
+export async function getFileTree(dir?: string): Promise<FileNode[]> {
   return invoke('get_file_tree', { dir: dir || null });
 }
 
-export async function readFile(path: string) {
+export async function readFile(path: string): Promise<{ content: string; path: string }> {
   return invoke('read_file', { path });
 }
 
-export async function writeFile(path: string, content: string) {
+export async function writeFile(path: string, content: string): Promise<void> {
   return invoke('write_file', { path, content });
 }
 
-export async function createFile(path: string) {
+export async function createFile(path: string): Promise<void> {
   return invoke('create_file', { path });
 }
 
-export async function createDir(path: string) {
+export async function createDir(path: string): Promise<void> {
   return invoke('create_dir', { path });
 }
 
-export async function renameNode(oldPath: string, newPath: string) {
+export async function renameNode(oldPath: string, newPath: string): Promise<void> {
   return invoke('rename_node', { oldPath, newPath });
 }
 
-export async function deleteNode(path: string) {
+export async function deleteNode(path: string): Promise<void> {
   return invoke('delete_node', { path });
 }
 
-export async function readFileBinary(path: string) {
+export async function readFileBinary(path: string): Promise<{ data: string; path: string }> {
   return invoke('read_file_binary', { path });
 }
 
-export async function revealInExplorer(path: string) {
+export async function revealInExplorer(path: string): Promise<void> {
   return invoke('reveal_in_explorer', { path });
 }
 
-export async function searchFiles(q: string, maxResults?: number) {
+export interface SearchResult {
+  path: string;
+  line: number;
+  column: number;
+  content: string;
+}
+
+export async function searchFiles(q: string, maxResults?: number): Promise<SearchResult[]> {
   return invoke('search_files', { q, maxResults: maxResults || null });
 }
 
@@ -48,35 +56,52 @@ export async function listFiles(): Promise<string[]> {
 
 // ===== Git =====
 
-export async function gitStatus() {
+export async function gitStatus(): Promise<GitFileStatus[]> {
   return invoke('git_status');
 }
 
-export async function gitStage(paths: string[]) {
+export async function gitStage(paths: string[]): Promise<void> {
   return invoke('git_stage', { paths });
 }
 
-export async function gitUnstage(paths: string[]) {
+export async function gitUnstage(paths: string[]): Promise<void> {
   return invoke('git_unstage', { paths });
 }
 
-export async function gitCommit(message: string) {
+export interface GitCommitResult {
+  ok: boolean;
+  hash?: string;
+  message?: string;
+}
+
+export async function gitCommit(message: string): Promise<GitCommitResult> {
   return invoke('git_commit', { message });
 }
 
-export async function gitBranches() {
+export async function gitBranches(): Promise<GitBranchInfo> {
   return invoke('git_branches');
 }
 
-export async function gitLog() {
+export async function gitLog(): Promise<GitLogEntry[]> {
   return invoke('git_log');
 }
 
-export async function gitShow(hash: string): Promise<any> {
+export interface GitShowResult {
+  hash: string;
+  shortHash: string;
+  subject: string;
+  author: string;
+  email: string;
+  date: string;
+  body: string;
+  files: { file: string; stats: string }[];
+}
+
+export async function gitShow(hash: string): Promise<GitShowResult> {
   return invoke('git_show', { hash });
 }
 
-export async function gitFileDiff(hash: string, file: string) {
+export async function gitFileDiff(hash: string, file: string): Promise<string> {
   return invoke('git_file_diff', { hash, file });
 }
 
@@ -88,33 +113,50 @@ export async function gitSyncStatus(): Promise<{ ahead: number; behind: number; 
   return invoke('git_sync_status');
 }
 
-export async function gitPush() {
+export async function gitPush(): Promise<{ ok: boolean }> {
   return invoke('git_push');
 }
 
-export async function gitPull() {
+export async function gitPull(): Promise<{ ok: boolean }> {
   return invoke('git_pull');
 }
 
-export async function gitWorkingDiff(file: string, staged?: boolean) {
+export async function gitWorkingDiff(file: string, staged?: boolean): Promise<string> {
   return invoke('git_working_diff', { file, staged: staged || null });
 }
 
 // ===== Workspace =====
 
-export async function getWorkspace() {
+export interface WorkspaceInfo {
+  path: string;
+  projectName: string;
+}
+
+export async function getWorkspace(): Promise<WorkspaceInfo> {
   return invoke('get_workspace');
 }
 
-export async function openWorkspace(path: string) {
+export interface OpenWorkspaceResult {
+  ok: boolean;
+  path: string;
+  projectName: string;
+}
+
+export async function openWorkspace(path: string): Promise<OpenWorkspaceResult> {
   return invoke('open_workspace', { path });
 }
 
-export async function browseDirs(dir?: string): Promise<any> {
+export interface BrowseDirResult {
+  current: string;
+  parent: string;
+  dirs: { name: string; path: string }[];
+}
+
+export async function browseDirs(dir?: string): Promise<BrowseDirResult> {
   return invoke('browse_dirs', { dir: dir || null });
 }
 
-export async function getRecent() {
+export async function getRecent(): Promise<string[]> {
   return invoke('get_recent');
 }
 
@@ -264,6 +306,23 @@ export async function sshReadFile(path: string): Promise<string> {
 
 export async function sshWriteFile(path: string, content: string): Promise<void> {
   return invoke('ssh_write_file', { path, content });
+}
+
+// SSH 文件操作
+export async function sshCreateDir(path: string): Promise<void> {
+  return invoke('ssh_create_dir', { path });
+}
+
+export async function sshDeleteFile(path: string): Promise<void> {
+  return invoke('ssh_delete_file', { path });
+}
+
+export async function sshDeleteDir(path: string): Promise<void> {
+  return invoke('ssh_delete_dir', { path });
+}
+
+export async function sshRename(oldPath: string, newPath: string): Promise<void> {
+  return invoke('ssh_rename', { oldPath, newPath });
 }
 
 // SSH 工作目录

@@ -26,14 +26,10 @@ export default function FolderBrowserDialog() {
     setError('');
     try {
       const data = await api.browseDirs(dir);
-      if (data.error) {
-        setError(data.error);
-      } else {
-        setBrowseData(data);
-        setInputPath(data.current);
-      }
-    } catch {
-      setError('无法浏览目录');
+      setBrowseData(data);
+      setInputPath(data.current);
+    } catch (e: any) {
+      setError(e.message || '无法浏览目录');
     }
     setLoading(false);
   }, []);

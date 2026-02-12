@@ -179,4 +179,34 @@ router.post('/files/mkdir', async (req, res) => {
   }
 });
 
+// PUT /api/ssh/files/rename - 重命名远程文件或目录
+router.put('/files/rename', async (req, res) => {
+  try {
+    const { oldPath, newPath } = req.body;
+    if (!oldPath || !newPath) {
+      return res.status(400).json({ error: 'oldPath and newPath required' });
+    }
+
+    await sshService.renameRemoteFile(oldPath, newPath);
+    res.json({ ok: true });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// DELETE /api/ssh/files/rmdir - 删除远程目录
+router.delete('/files/rmdir', async (req, res) => {
+  try {
+    const { path: dirPath } = req.body;
+    if (!dirPath) {
+      return res.status(400).json({ error: 'path required' });
+    }
+
+    await sshService.deleteRemoteDirectory(dirPath);
+    res.json({ ok: true });
+  } catch (error: any) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
 export default router;

@@ -75,6 +75,11 @@ pub fn run() {
             commands::ssh::ssh_git_branches,
             commands::ssh::ssh_git_stage,
             commands::ssh::ssh_git_commit,
+            // ssh 文件操作
+            commands::ssh::ssh_create_dir,
+            commands::ssh::ssh_delete_file,
+            commands::ssh::ssh_delete_dir,
+            commands::ssh::ssh_rename,
         ])
         .setup(|app| {
             let config_dir = app.path().app_data_dir().ok();

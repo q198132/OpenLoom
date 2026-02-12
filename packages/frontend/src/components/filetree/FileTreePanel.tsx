@@ -19,8 +19,12 @@ export default function FileTreePanel() {
   const sshConnections = useSSHStore((s) => s.connections);
   const sshWorkingDir = useSSHStore((s) => s.workingDir);
   const setWorkingDir = useSSHStore((s) => s.setWorkingDir);
+
+  // 使用 ref 跟踪上一次的状态，避免重复刷新
   const prevPathRef = useRef(currentPath);
-  const prevSessionRef = useRef(sshSession?.connectionId);
+  const prevSessionIdRef = useRef(sshSession?.connectionId);
+  const isRefreshingRef = useRef(false);
+  const mountedRef = useRef(false);
 
   // 远程目录输入状态
   const [showDirInput, setShowDirInput] = useState(false);
@@ -59,39 +63,58 @@ export default function FileTreePanel() {
   const [creatingIn, setCreatingIn] = useState<string | null>(null);
   const [creatingType, setCreatingType] = useState<'file' | 'folder' | null>(null);
 
+  // 统一的刷新函数，带防抖
+  const refreshAll = useCallback(async () => {
+    // 防止重复刷新
+    if (isRefreshingRef.current) return;
+    isRefreshingRef.current = true;
+
+    try {
+      await Promise.all([
+        refreshRoot(),
+        fetchGitStatus(),
+      ]);
+    } finally {
+      // 延迟重置，防止快速连续调用
+      setTimeout(() => {
+        isRefreshingRef.current = false;
+      }, 100);
+    }
+  }, [refreshRoot, fetchGitStatus]);
+
   const onControlMessage = useCallback(
     (msg: ControlMessage) => {
       if (msg.type === 'file-changed') {
-        refreshRoot();
-        fetchGitStatus();
+        refreshAll();
       }
     },
-    [refreshRoot, fetchGitStatus],
+    [refreshAll],
   );
 
   useControlSocket(onControlMessage);
 
+  // 初始化加载（只在组件挂载时执行一次）
   useEffect(() => {
-    refreshRoot();
-    fetchGitStatus();
-  }, [refreshRoot, fetchGitStatus]);
-
-  // 工作区切换时自动刷新文件树和 Git 状态
-  useEffect(() => {
-    if (prevPathRef.current !== currentPath && currentPath) {
-      refreshRoot();
-      fetchGitStatus();
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      refreshAll();
     }
+  }, [refreshAll]);
+
+  // 合并工作区切换和 SSH 连接状态变化的监听
+  useEffect(() => {
+    const pathChanged = prevPathRef.current !== currentPath && currentPath;
+    const sessionChanged = prevSessionIdRef.current !== sshSession?.connectionId;
+
+    // 更新 ref
     prevPathRef.current = currentPath;
-  }, [currentPath, refreshRoot, fetchGitStatus]);
+    prevSessionIdRef.current = sshSession?.connectionId;
 
-  // SSH 连接状态变化时刷新文件树
-  useEffect(() => {
-    if (prevSessionRef.current !== sshSession?.connectionId) {
-      refreshRoot();
+    // 如果有任何变化，刷新
+    if (pathChanged || sessionChanged) {
+      refreshAll();
     }
-    prevSessionRef.current = sshSession?.connectionId;
-  }, [sshSession?.connectionId, refreshRoot]);
+  }, [currentPath, sshSession?.connectionId, refreshAll]);
 
   const handleFileClick = (path: string) => {
     window.dispatchEvent(

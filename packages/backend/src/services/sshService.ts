@@ -291,6 +291,28 @@ class SSHService {
 
     await this.activeConnection.sftp.mkdir(remotePath, true);
   }
+
+  /**
+   * 重命名远程文件或目录
+   */
+  async renameRemoteFile(oldPath: string, newPath: string): Promise<void> {
+    if (!this.activeConnection) {
+      throw new Error('No active SSH connection');
+    }
+
+    await this.activeConnection.sftp.rename(oldPath, newPath);
+  }
+
+  /**
+   * 删除远程目录（递归）
+   */
+  async deleteRemoteDirectory(remotePath: string): Promise<void> {
+    if (!this.activeConnection) {
+      throw new Error('No active SSH connection');
+    }
+
+    await this.activeConnection.sftp.rmdir(remotePath, true);
+  }
 }
 
 export const sshService = new SSHService();

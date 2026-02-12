@@ -12,14 +12,27 @@ interface ConfigEntry {
   [key: string]: string | undefined;
 }
 
+// 缓存解析结果
+let cachedHosts: SSHConfigHost[] | null = null;
+let cacheTime: number = 0;
+const CACHE_TTL = 60000; // 60 秒缓存
+
 /**
  * 解析 ~/.ssh/config 文件
  */
 export function parseSSHConfig(): SSHConfigHost[] {
+  // 检查缓存
+  const now = Date.now();
+  if (cachedHosts && (now - cacheTime) < CACHE_TTL) {
+    return cachedHosts;
+  }
+
   const configPath = path.join(os.homedir(), '.ssh', 'config');
   const hosts: SSHConfigHost[] = [];
 
   if (!fs.existsSync(configPath)) {
+    cachedHosts = hosts;
+    cacheTime = now;
     return hosts;
   }
 
@@ -29,10 +42,21 @@ export function parseSSHConfig(): SSHConfigHost[] {
 
     for (const entry of entries) {
       if (entry.Host && entry.Host !== '*') {
+        // 安全解析端口，默认 22
+        let port = 22;
+        if (entry.Port) {
+          const parsed = parseInt(entry.Port, 10);
+          if (!isNaN(parsed) && parsed > 0 && parsed <= 65535) {
+            port = parsed;
+          } else {
+            console.warn(`[ssh-config] Invalid port "${entry.Port}" for host ${entry.Host}, using default 22`);
+          }
+        }
+
         hosts.push({
           name: entry.Host,
           host: entry.HostName || entry.Host,
-          port: parseInt(entry.Port || '22', 10),
+          port,
           username: entry.User || os.userInfo().username,
           identityFile: entry.IdentityFile,
         });
@@ -42,7 +66,17 @@ export function parseSSHConfig(): SSHConfigHost[] {
     console.error('[ssh-config] Failed to parse config:', error);
   }
 
+  cachedHosts = hosts;
+  cacheTime = now;
   return hosts;
+}
+
+/**
+ * 清除缓存（用于配置文件更新后刷新）
+ */
+export function clearSSHConfigCache(): void {
+  cachedHosts = null;
+  cacheTime = 0;
 }
 
 /**

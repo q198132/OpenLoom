@@ -129,6 +129,10 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ workingDir: dir });
       // 刷新文件树
       useFileTreeStore.getState().refreshRoot();
+      // 刷新 Git 状态
+      const { useGitStore } = await import('./gitStore');
+      useGitStore.getState().fetchStatus();
+      useGitStore.getState().fetchBranch();
     } catch (error: any) {
       set({ error: error.message });
     }
