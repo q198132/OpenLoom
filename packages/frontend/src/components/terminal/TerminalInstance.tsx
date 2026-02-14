@@ -61,6 +61,18 @@ interface TerminalInstanceProps {
   visible: boolean;
 }
 
+const URL_REGEX = /https?:\/\/[^\s)\]}>"']+/g;
+const WINDOWS_ABS_PATH_REGEX = /[A-Za-z]:\\[^\s<>:"|?*]+(?:\\[^\s<>:"|?*]+)*/g;
+const POSIX_PATH_REGEX = /(?:\.\.?\/|\/)[^\s"'`<>|]+/g;
+
+function normalizeTerminalPath(raw: string): string {
+  let p = raw.trim().replace(/[),.;:!?]+$/, '');
+  if (!p) return p;
+  // 统一分隔符，便于后续在前端 store 中复用
+  p = p.replace(/\\/g, '/');
+  return p;
+}
+
 export default function TerminalInstance({ id, visible }: TerminalInstanceProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<Terminal | null>(null);
@@ -110,7 +122,55 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
-    term.loadAddon(new WebLinksAddon());
+    term.loadAddon(new WebLinksAddon((event, uri) => {
+      // 只在 Ctrl/Cmd + Click 时触发外链打开，避免误触
+      if (!(event.ctrlKey || event.metaKey)) return;
+      api.openExternalUrl(uri).catch(() => {});
+    }));
+
+    term.registerLinkProvider({
+      provideLinks: (bufferLineNumber, callback) => {
+        const line = term.buffer.active.getLine(bufferLineNumber - 1);
+        if (!line) {
+          callback(undefined);
+          return;
+        }
+
+        const text = line.translateToString(false);
+        const links: any[] = [];
+
+        const addPathLinks = (regex: RegExp) => {
+          for (const match of text.matchAll(regex)) {
+            const raw = match[0];
+            const normalized = normalizeTerminalPath(raw);
+            if (!normalized) continue;
+            const start = (match.index ?? 0) + 1;
+            const end = start + raw.length;
+            links.push({
+              text: raw,
+              range: {
+                start: { x: start, y: bufferLineNumber },
+                end: { x: end, y: bufferLineNumber },
+              },
+              activate: (event: MouseEvent) => {
+                if (!(event.ctrlKey || event.metaKey)) return;
+                window.dispatchEvent(new CustomEvent('open-file', { detail: { path: normalized } }));
+              },
+              decorations: {
+                pointerCursor: true,
+                underline: true,
+              },
+            });
+          }
+        };
+
+        addPathLinks(WINDOWS_ABS_PATH_REGEX);
+        addPathLinks(POSIX_PATH_REGEX);
+
+        callback(links.length ? links : undefined);
+      },
+    });
+
     term.open(containerRef.current);
 
     const loadWebgl = () => {

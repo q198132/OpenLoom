@@ -39,6 +39,10 @@ export async function revealInExplorer(path: string): Promise<void> {
   return invoke('reveal_in_explorer', { path });
 }
 
+export async function openExternalUrl(path: string): Promise<void> {
+  return invoke('plugin:shell|open', { path, with: null });
+}
+
 export interface SearchResult {
   path: string;
   line: number;
