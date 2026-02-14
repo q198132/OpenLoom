@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Terminal } from '@xterm/xterm';
+import { Terminal, type ILink } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
@@ -61,7 +61,6 @@ interface TerminalInstanceProps {
   visible: boolean;
 }
 
-const URL_REGEX = /https?:\/\/[^\s)\]}>"']+/g;
 const WINDOWS_ABS_PATH_REGEX = /[A-Za-z]:\\[^\s<>:"|?*]+(?:\\[^\s<>:"|?*]+)*/g;
 const POSIX_PATH_REGEX = /(?:\.\.?\/|\/)[^\s"'`<>|]+/g;
 
@@ -137,7 +136,7 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
         }
 
         const text = line.translateToString(false);
-        const links: any[] = [];
+        const links: ILink[] = [];
 
         const addPathLinks = (regex: RegExp) => {
           for (const match of text.matchAll(regex)) {
@@ -145,7 +144,7 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
             const normalized = normalizeTerminalPath(raw);
             if (!normalized) continue;
             const start = (match.index ?? 0) + 1;
-            const end = start + raw.length;
+            const end = start + raw.length - 1;
             links.push({
               text: raw,
               range: {
