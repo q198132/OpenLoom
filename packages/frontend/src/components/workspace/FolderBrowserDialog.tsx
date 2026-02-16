@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { FolderOpen, ArrowUp, X } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { FolderOpen, FolderPlus, ArrowUp, X, Check, XCircle } from 'lucide-react';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import * as api from '@/lib/api';
 
@@ -20,6 +20,9 @@ export default function FolderBrowserDialog() {
   const [browseData, setBrowseData] = useState<BrowseResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const newFolderInputRef = useRef<HTMLInputElement>(null);
 
   const browse = useCallback(async (dir: string) => {
     setLoading(true);
@@ -52,6 +55,30 @@ export default function FolderBrowserDialog() {
       if (inputPath.trim()) browse(inputPath.trim());
     } else if (e.key === 'Escape') {
       setBrowserOpen(false);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    const name = newFolderName.trim();
+    if (!name || !browseData) return;
+    const sep = browseData.current.includes('/') ? '/' : '\\';
+    const newPath = browseData.current + sep + name;
+    try {
+      await api.createDir(newPath);
+      setCreating(false);
+      setNewFolderName('');
+      await browse(browseData.current);
+    } catch (e: any) {
+      setError(e.message || '创建文件夹失败');
+    }
+  };
+
+  const handleNewFolderKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleCreateFolder();
+    } else if (e.key === 'Escape') {
+      setCreating(false);
+      setNewFolderName('');
     }
   };
 
@@ -104,6 +131,36 @@ export default function FolderBrowserDialog() {
                   ..
                 </button>
               )}
+              {/* 新建文件夹 - 内联输入 */}
+              {creating && (
+                <div className="flex items-center gap-1 px-3 py-1.5">
+                  <FolderPlus size={14} className="text-green shrink-0" />
+                  <input
+                    ref={newFolderInputRef}
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    onKeyDown={handleNewFolderKeyDown}
+                    placeholder="文件夹名称..."
+                    className="flex-1 px-2 py-0.5 text-sm bg-surface0 border border-surface1 rounded text-text placeholder:text-subtext0 focus:outline-none focus:border-accent"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleCreateFolder}
+                    className="p-1 rounded hover:bg-surface0 text-green transition-colors"
+                    title="确认"
+                  >
+                    <Check size={14} />
+                  </button>
+                  <button
+                    onClick={() => { setCreating(false); setNewFolderName(''); }}
+                    className="p-1 rounded hover:bg-surface0 text-subtext0 transition-colors"
+                    title="取消"
+                  >
+                    <XCircle size={14} />
+                  </button>
+                </div>
+              )}
               {browseData.dirs.map((d) => (
                 <button
                   key={d.path}
@@ -115,7 +172,7 @@ export default function FolderBrowserDialog() {
                   {d.name}
                 </button>
               ))}
-              {browseData.dirs.length === 0 && !error && (
+              {browseData.dirs.length === 0 && !creating && !error && (
                 <div className="px-3 py-2 text-sm text-subtext0">无子目录</div>
               )}
             </>
@@ -123,19 +180,29 @@ export default function FolderBrowserDialog() {
         </div>
 
         {/* 底部按钮 */}
-        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-surface0">
+        <div className="flex items-center justify-between px-4 py-3 border-t border-surface0">
           <button
-            onClick={() => setBrowserOpen(false)}
-            className="px-4 py-1.5 text-sm rounded border border-surface1 text-subtext1 hover:bg-surface0 transition-colors"
+            onClick={() => { setCreating(true); setNewFolderName(''); }}
+            disabled={!browseData || loading}
+            className="px-3 py-1.5 text-sm rounded border border-surface1 text-subtext1 hover:bg-surface0 transition-colors flex items-center gap-1.5 disabled:opacity-40"
           >
-            取消
+            <FolderPlus size={14} />
+            新建文件夹
           </button>
-          <button
-            onClick={handleOpen}
-            className="px-4 py-1.5 text-sm rounded bg-accent text-base font-medium hover:opacity-90 transition-opacity"
-          >
-            打开
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setBrowserOpen(false)}
+              className="px-4 py-1.5 text-sm rounded border border-surface1 text-subtext1 hover:bg-surface0 transition-colors"
+            >
+              取消
+            </button>
+            <button
+              onClick={handleOpen}
+              className="px-4 py-1.5 text-sm rounded bg-accent text-base font-medium hover:opacity-90 transition-opacity"
+            >
+              打开
+            </button>
+          </div>
         </div>
       </div>
     </div>

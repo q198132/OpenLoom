@@ -1,7 +1,9 @@
-import { useState } from 'react';
-import { Plus, Minus, ChevronRight, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Plus, Minus, ChevronRight, ChevronDown, EyeOff } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import { useEditorStore } from '@/stores/editorStore';
+import { useWorkspaceStore } from '@/stores/workspaceStore';
+import * as api from '@/lib/api';
 
 const STATUS_COLORS: Record<string, string> = {
   modified: 'text-yellow',
@@ -20,10 +22,45 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function GitFileList() {
-  const { files, stageFiles, unstageFiles } = useGitStore();
+  const { files, stageFiles, unstageFiles, fetchStatus } = useGitStore();
+  const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; filePath: string } | null>(null);
+  const ctxRef = useRef<HTMLDivElement>(null);
 
   const staged = files.filter((f) => f.staged);
   const unstaged = files.filter((f) => !f.staged);
+
+  // 点击外部关闭菜单
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const handler = (e: MouseEvent) => {
+      if (ctxRef.current && !ctxRef.current.contains(e.target as Node)) setCtxMenu(null);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [ctxMenu]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, filePath: string) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY, filePath });
+  }, []);
+
+  const addToGitignore = useCallback(async (filePath: string) => {
+    const root = useWorkspaceStore.getState().currentPath;
+    if (!root) return;
+    const sep = root.includes('/') ? '/' : '\\';
+    const ignorePath = root + sep + '.gitignore';
+    let content = '';
+    try {
+      const res = await api.readFile(ignorePath);
+      content = res.content;
+    } catch { /* .gitignore 不存在，新建 */ }
+    const entry = filePath.replace(/\\/g, '/');
+    if (content.split('\n').some((l) => l.trim() === entry)) return;
+    const newContent = content.endsWith('\n') || content === '' ? content + entry + '\n' : content + '\n' + entry + '\n';
+    await api.writeFile(ignorePath, newContent);
+    await fetchStatus();
+    setCtxMenu(null);
+  }, [fetchStatus]);
 
   return (
     <div className="text-xs">
@@ -36,6 +73,7 @@ export default function GitFileList() {
           onAction={(path) => unstageFiles([path])}
           staged
           defaultOpen
+          onContextMenu={handleContextMenu}
         />
       )}
       {unstaged.length > 0 && (
@@ -47,11 +85,29 @@ export default function GitFileList() {
           onAction={(path) => stageFiles([path])}
           staged={false}
           defaultOpen
+          onContextMenu={handleContextMenu}
         />
       )}
       {files.length === 0 && (
         <div className="px-3 py-4 text-center text-overlay0">
           没有变更
+        </div>
+      )}
+
+      {/* 右键菜单 */}
+      {ctxMenu && (
+        <div
+          ref={ctxRef}
+          style={{ position: 'fixed', left: ctxMenu.x, top: ctxMenu.y, zIndex: 50 }}
+          className="bg-base border border-surface0 rounded-md shadow-lg py-1 min-w-[160px]"
+        >
+          <button
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left text-text hover:bg-surface0 transition-colors"
+            onClick={() => addToGitignore(ctxMenu.filePath)}
+          >
+            <EyeOff size={14} />
+            添加到 .gitignore
+          </button>
         </div>
       )}
     </div>
@@ -66,6 +122,7 @@ function FileSection({
   onAction,
   staged,
   defaultOpen = true,
+  onContextMenu,
 }: {
   title: string;
   count: number;
@@ -74,6 +131,7 @@ function FileSection({
   onAction: (path: string) => void;
   staged: boolean;
   defaultOpen?: boolean;
+  onContextMenu: (e: React.MouseEvent, filePath: string) => void;
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
@@ -99,6 +157,7 @@ function FileSection({
             action={action}
             onAction={onAction}
             staged={staged}
+            onContextMenu={onContextMenu}
           />
         ))}
     </div>
@@ -111,12 +170,14 @@ function GitFileRow({
   action,
   onAction,
   staged,
+  onContextMenu,
 }: {
   filePath: string;
   status: string;
   action: 'stage' | 'unstage';
   onAction: (path: string) => void;
   staged: boolean;
+  onContextMenu: (e: React.MouseEvent, filePath: string) => void;
 }) {
   // 分离文件名和目录路径（用 / 或 \ 分割）
   const parts = filePath.replace(/\\/g, '/').split('/');
@@ -130,6 +191,7 @@ function GitFileRow({
     <div
       className="flex items-center h-[22px] pl-6 pr-2 hover:bg-surface0 group cursor-pointer"
       onClick={() => useEditorStore.getState().openWorkingDiff(filePath, staged)}
+      onContextMenu={(e) => onContextMenu(e, filePath)}
     >
       <div className="flex items-center gap-1.5 min-w-0 flex-1">
         <FileIcon fileName={fileName} />
