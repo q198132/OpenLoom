@@ -22,12 +22,15 @@ function SidebarIcon({
     <button
       onClick={onClick}
       title={title}
-      className={`p-2 rounded transition-colors ${
+      className={`relative p-2 rounded transition-all duration-200 ${
         active
           ? 'text-accent bg-surface0'
-          : 'text-overlay0 hover:text-text hover:bg-surface0/50'
+          : 'text-overlay0 hover:text-text hover:bg-surface0/50 hover:scale-110 active:scale-95'
       }`}
     >
+      {active && (
+        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[2px] h-4 bg-accent rounded-r" />
+      )}
       {children}
     </button>
   );
@@ -59,7 +62,7 @@ export default function SidebarContainer() {
           <div className="relative">
             <GitBranch size={18} />
             {changeCount > 0 && (
-              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-accent text-crust text-[10px] font-bold leading-none px-0.5">
+              <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-accent text-crust text-[10px] font-bold leading-none px-0.5 shadow-[0_0_8px_var(--color-accent)]">
                 {changeCount > 99 ? '99+' : changeCount}
               </span>
             )}
@@ -80,7 +83,7 @@ export default function SidebarContainer() {
           <div className="relative">
             <Server size={18} />
             {isConnected && (
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green" />
+              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-green shadow-[0_0_6px_var(--color-green)]" />
             )}
           </div>
         </SidebarIcon>

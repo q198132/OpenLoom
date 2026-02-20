@@ -1,3 +1,8 @@
+export const DEFAULT_PORT = 3000;
+export const API_PREFIX = '/api';
+export const WS_PTY_PATH = '/ws/pty';
+export const WS_CONTROL_PATH = '/ws/control';
+
 export const IGNORED_DIRS = [
   'node_modules',
   '.git',

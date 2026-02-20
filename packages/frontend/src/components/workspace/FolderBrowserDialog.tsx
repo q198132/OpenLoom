@@ -85,8 +85,8 @@ export default function FolderBrowserDialog() {
   if (!browserOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-base border border-surface0 rounded-lg shadow-xl w-[520px] max-h-[480px] flex flex-col">
+    <div className="dialog-overlay fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="dialog-content bg-base/95 backdrop-blur-xl border border-surface0/60 rounded-xl shadow-2xl w-[520px] max-h-[480px] flex flex-col">
         {/* 标题栏 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-surface0">
           <span className="text-sm font-semibold text-text">打开文件夹</span>
@@ -106,7 +106,7 @@ export default function FolderBrowserDialog() {
             onChange={(e) => setInputPath(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="输入目录路径..."
-            className="w-full px-3 py-2 text-sm bg-surface0 border border-surface1 rounded text-text placeholder:text-subtext0 focus:outline-none focus:border-accent"
+            className="w-full px-3 py-2 text-sm bg-surface0 border border-surface1 rounded-lg text-text placeholder:text-subtext0 focus:outline-none focus:border-accent input-glow transition-all duration-200"
             autoFocus
           />
         </div>
@@ -198,7 +198,7 @@ export default function FolderBrowserDialog() {
             </button>
             <button
               onClick={handleOpen}
-              className="px-4 py-1.5 text-sm rounded bg-accent text-base font-medium hover:opacity-90 transition-opacity"
+              className="px-4 py-1.5 text-sm rounded-lg bg-accent text-base font-medium hover:opacity-90 transition-all duration-200 active:scale-[0.97] shadow-[0_0_12px_var(--color-accent)/20]"
             >
               打开
             </button>

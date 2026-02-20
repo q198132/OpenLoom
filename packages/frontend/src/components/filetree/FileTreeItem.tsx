@@ -170,8 +170,8 @@ export default function FileTreeItem({
   return (
     <div>
       <div
-        className={`flex items-center h-7 cursor-pointer select-none hover:bg-surface0 transition-colors ${
-          isSelected ? 'bg-surface0 text-accent' : 'text-subtext1'
+        className={`flex items-center h-7 cursor-pointer select-none transition-all duration-150 ${
+          isSelected ? 'bg-accent/10 text-accent border-l-2 border-accent' : 'text-subtext1 hover:bg-surface0/70 border-l-2 border-transparent'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         draggable

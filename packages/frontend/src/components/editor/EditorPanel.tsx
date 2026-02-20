@@ -101,9 +101,10 @@ export default function EditorPanel() {
 
   if (tabs.length === 0 && !showDiff && !commitDiff) {
     return (
-      <div className="h-full bg-base flex flex-col items-center justify-center text-overlay0 gap-3">
-        <Code2 size={48} strokeWidth={1} />
+      <div className="h-full bg-base flex flex-col items-center justify-center text-overlay0 gap-4">
+        <Code2 size={48} strokeWidth={1} className="opacity-30" />
         <span className="text-sm">打开文件开始编辑</span>
+        <span className="text-xs text-overlay0/60">Ctrl+P 快速打开文件</span>
       </div>
     );
   }

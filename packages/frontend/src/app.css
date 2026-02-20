@@ -32,19 +32,35 @@ html, body, #root {
   background-color: var(--color-base);
   color: var(--color-text);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 动画 */
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes scaleIn { from { opacity: 0; transform: scale(0.96) } to { opacity: 1; transform: scale(1) } }
+@keyframes pulse-subtle { 0%,100% { opacity: 1 } 50% { opacity: 0.7 } }
+
+.dialog-overlay { animation: fadeIn 0.15s ease-out; backdrop-filter: blur(6px); }
+.dialog-content { animation: scaleIn 0.2s cubic-bezier(0.16,1,0.3,1); }
+.dropdown-anim { animation: slideDown 0.15s cubic-bezier(0.16,1,0.3,1); }
+
+/* 输入框聚焦发光 */
+.input-glow:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 /* 滚动条样式 */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-mantle);
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--color-surface1);
-  border-radius: 4px;
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-surface2);
@@ -53,11 +69,15 @@ html, body, #root {
 /* react-resizable-panels 拖拽条 */
 [data-panel-resize-handle-id] {
   background: var(--color-surface0);
-  transition: background 0.15s;
+  transition: background 0.2s, box-shadow 0.2s;
 }
-[data-panel-resize-handle-id]:hover,
+[data-panel-resize-handle-id]:hover {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-accent) 40%, transparent);
+}
 [data-panel-resize-handle-id][data-resize-handle-active] {
   background: var(--color-accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--color-accent) 50%, transparent);
 }
 
 /* Catppuccin Latte (Light) 主题覆盖 */

@@ -64,7 +64,7 @@ export default function ContextMenu({
     <div
       ref={ref}
       style={style}
-      className="bg-base border border-surface0 rounded-md shadow-lg py-1 min-w-[160px]"
+      className="bg-base/95 backdrop-blur-xl border border-surface0/60 rounded-lg shadow-2xl py-1 min-w-[160px] dropdown-anim"
     >
       {(isDirectory || isBlank) && (
         <>

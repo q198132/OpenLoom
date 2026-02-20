@@ -90,7 +90,7 @@ export default function GitCommitBox() {
         value={commitMessage}
         onChange={(e) => setCommitMessage(e.target.value)}
         placeholder="提交信息..."
-        className="w-full h-16 px-2 py-1.5 text-xs bg-crust text-text border border-surface0 rounded resize-none focus:outline-none focus:border-accent placeholder:text-overlay0"
+        className="w-full h-16 px-2 py-1.5 text-xs bg-crust text-text border border-surface0 rounded-lg resize-none focus:outline-none focus:border-accent input-glow placeholder:text-overlay0 transition-all duration-200"
         onKeyDown={(e) => {
           if (matchShortcut(e.nativeEvent, shortcuts.gitCommit)) {
             handleCommit();
@@ -100,7 +100,7 @@ export default function GitCommitBox() {
       <button
         onClick={handleCommit}
         disabled={!commitMessage.trim()}
-        className="w-full mt-1.5 py-1 text-xs font-medium rounded bg-accent text-crust hover:bg-accent/80 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-full mt-1.5 py-1 text-xs font-medium rounded-lg bg-accent text-crust hover:bg-accent/80 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.97] shadow-[0_0_12px_var(--color-accent)/20]"
       >
         提交 (Ctrl+Enter)
       </button>
@@ -108,7 +108,7 @@ export default function GitCommitBox() {
         <button
           onClick={sync}
           disabled={syncing}
-          className="w-full mt-1 py-1 text-xs font-medium rounded bg-surface1 text-subtext1 hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-1.5"
+          className="w-full mt-1 py-1 text-xs font-medium rounded-lg bg-surface1 text-subtext1 hover:bg-surface2 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 active:scale-[0.97] flex items-center justify-center gap-1.5"
         >
           <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
           <span>

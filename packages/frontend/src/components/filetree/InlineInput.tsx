@@ -53,7 +53,7 @@ export default function InlineInput({ defaultValue = '', depth, onConfirm, onCan
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKeyDown}
         onBlur={handleConfirm}
-        className="flex-1 h-5 px-1 text-xs bg-surface0 border border-accent rounded text-text outline-none"
+        className="flex-1 h-5 px-1 text-xs bg-surface0 border border-accent rounded text-text outline-none input-glow transition-all duration-200"
       />
     </div>
   );

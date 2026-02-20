@@ -308,6 +308,16 @@ openloom/
 
 ## 更新日志
 
+### v0.2.0
+
+**✨ UI 全面升级**
+- **动画系统** — 新增 fadeIn、slideDown、scaleIn 入场动画，对话框和下拉菜单开启时更流畅
+- **毛玻璃效果** — 所有对话框、右键菜单采用 backdrop-blur 毛玻璃背景，提升视觉层次
+- **输入框发光** — 聚焦时显示 accent 色光晕（input-glow），统一全局输入体验
+- **交互反馈** — 按钮 hover 缩放、active 按压效果、侧栏图标动态指示条
+- **细节打磨** — 更细的滚动条、resize 手柄发光、Tab 关闭按钮 hover 显现、Git badge 发光效果
+- **修复共享包常量缺失** — 补充 `DEFAULT_PORT`、`API_PREFIX`、`WS_PTY_PATH`、`WS_CONTROL_PATH` 导出
+
 ### v0.1.9
 
 **🚀 新功能**

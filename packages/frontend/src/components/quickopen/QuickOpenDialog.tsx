@@ -70,11 +70,11 @@ export default function QuickOpenDialog() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex justify-center pt-[15vh] z-50"
+      className="dialog-overlay fixed inset-0 bg-black/40 flex justify-center pt-[15vh] z-50"
       onClick={toggleQuickOpen}
     >
       <div
-        className="bg-base border border-surface0 rounded-lg shadow-xl w-[500px] max-h-[360px] flex flex-col"
+        className="dialog-content bg-base/95 backdrop-blur-xl border border-surface0/60 rounded-xl shadow-2xl w-[500px] max-h-[360px] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-3 py-2 border-b border-surface0">
@@ -85,7 +85,7 @@ export default function QuickOpenDialog() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="输入文件名搜索..."
-            className="w-full px-2 py-1.5 text-sm bg-surface0 border border-surface1 rounded text-text placeholder:text-overlay0 focus:outline-none focus:border-accent"
+            className="w-full px-2 py-1.5 text-sm bg-surface0 border border-surface1 rounded-lg text-text placeholder:text-overlay0 focus:outline-none focus:border-accent input-glow transition-all duration-200"
           />
         </div>
         <div className="flex-1 overflow-y-auto py-1">
@@ -120,8 +120,8 @@ function FileItem({
 
   return (
     <button
-      className={`flex items-center gap-2 w-full px-3 py-1.5 text-left text-xs transition-colors ${
-        isSelected ? 'bg-surface0 text-accent' : 'text-text hover:bg-surface0/50'
+      className={`flex items-center gap-2 w-full px-3 py-1.5 text-left text-xs transition-all duration-150 ${
+        isSelected ? 'bg-accent/10 text-accent border-l-2 border-accent' : 'text-text hover:bg-surface0/50'
       }`}
       onClick={onClick}
     >

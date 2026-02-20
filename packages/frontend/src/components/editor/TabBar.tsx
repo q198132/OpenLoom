@@ -11,10 +11,10 @@ export default function TabBar() {
       {tabs.map((tab) => (
         <div
           key={tab.path}
-          className={`flex items-center gap-1.5 h-full px-3 cursor-pointer border-r border-surface0 text-xs select-none transition-colors ${
+          className={`group flex items-center gap-1.5 h-full px-3 cursor-pointer border-r border-surface0/50 text-xs select-none transition-all duration-200 ${
             activeTab === tab.path
-              ? 'bg-base text-text border-b-2 border-b-accent'
-              : 'text-overlay1 hover:bg-surface0'
+              ? 'bg-base text-text border-b-2 border-b-accent shadow-[inset_0_-1px_0_var(--color-accent)]'
+              : 'text-overlay1 hover:bg-surface0/60 hover:text-subtext1'
           }`}
           onClick={() => setActiveTab(tab.path)}
         >
@@ -23,7 +23,7 @@ export default function TabBar() {
             {tab.name}
           </span>
           <button
-            className="p-0.5 rounded hover:bg-surface1 text-overlay0 hover:text-text"
+            className="p-0.5 rounded hover:bg-surface1 text-overlay0 hover:text-text opacity-0 group-hover:opacity-100 transition-all duration-150"
             onClick={(e) => {
               e.stopPropagation();
               closeTab(tab.path);

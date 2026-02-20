@@ -109,11 +109,11 @@ function GraphRow({
   onSelect: (hash: string) => void;
 }) {
   const { branches, tags } = parseRefs(entry.refs);
-  const bg = isSelected ? 'bg-surface1' : '';
+  const bg = isSelected ? 'bg-surface1 shadow-sm' : '';
 
   return (
     <div
-      className={`flex items-center h-[24px] px-2 hover:bg-surface0 group cursor-pointer ${bg}`}
+      className={`flex items-center h-[24px] px-2 hover:bg-surface0 group cursor-pointer transition-all duration-150 ${bg}`}
       onClick={() => onSelect(entry.hash)}
       title={`${entry.shortHash} · ${entry.author} · ${formatDate(entry.date)}\n${entry.message}`}
     >

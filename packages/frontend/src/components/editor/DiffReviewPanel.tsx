@@ -36,14 +36,14 @@ export default function DiffReviewPanel() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => acceptReview(activeReview.path)}
-            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-green/15 text-green hover:bg-green/25 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg bg-green/15 text-green hover:bg-green/25 transition-all duration-200 active:scale-95"
           >
             <Check size={13} />
             接受
           </button>
           <button
             onClick={() => rejectReview(activeReview.path)}
-            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-red/15 text-red hover:bg-red/25 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg bg-red/15 text-red hover:bg-red/25 transition-all duration-200 active:scale-95"
           >
             <X size={13} />
             拒绝

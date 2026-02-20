@@ -23,14 +23,14 @@ export default function DiffReviewBar() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={acceptAll}
-            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-green/15 text-green hover:bg-green/25 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg bg-green/15 text-green hover:bg-green/25 transition-all duration-200 active:scale-95"
           >
             <CheckCheck size={13} />
             全部接受
           </button>
           <button
             onClick={rejectAll}
-            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded bg-red/15 text-red hover:bg-red/25 transition-colors"
+            className="flex items-center gap-1 px-2 py-0.5 text-xs rounded-lg bg-red/15 text-red hover:bg-red/25 transition-all duration-200 active:scale-95"
           >
             <XCircle size={13} />
             全部拒绝
@@ -44,9 +44,9 @@ export default function DiffReviewBar() {
           return (
             <div
               key={r.path}
-              className={`flex items-center gap-1 px-2 py-1 rounded text-xs cursor-pointer transition-colors ${
+              className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs cursor-pointer transition-all duration-150 ${
                 isActive
-                  ? 'bg-surface0 text-text'
+                  ? 'bg-surface0 text-text shadow-sm'
                   : 'text-overlay1 hover:bg-surface0/50'
               }`}
               onClick={() => setActiveReview(r.path)}

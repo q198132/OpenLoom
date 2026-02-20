@@ -30,7 +30,7 @@ export default function TopBar() {
       <div className="flex items-center gap-2">
         <button
           onClick={toggleSidebar}
-          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"
+          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-all duration-200 hover:scale-105 active:scale-95"
           title={sidebarVisible ? '隐藏侧栏' : '显示侧栏'}
         >
           {sidebarVisible ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
@@ -51,7 +51,7 @@ export default function TopBar() {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute top-full left-0 mt-1 w-64 bg-surface0 border border-surface1 rounded-lg shadow-lg z-50 py-1">
+            <div className="dropdown-anim absolute top-full left-0 mt-1 w-64 bg-surface0/80 backdrop-blur-xl border border-surface1/60 rounded-lg shadow-2xl z-50 py-1">
               <button
                 onClick={() => { setDropdownOpen(false); setBrowserOpen(true); }}
                 className="w-full text-left px-3 py-2 text-sm text-text hover:bg-surface1 transition-colors flex items-center gap-2"
@@ -94,21 +94,21 @@ export default function TopBar() {
           href="https://github.com/q198132/OpenLoom"
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"
+          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-all duration-200 hover:scale-105 active:scale-95"
           title="GitHub"
         >
           <Github size={18} />
         </a>
         <button
           onClick={toggleSettings}
-          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"
+          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-all duration-200 hover:scale-105 active:scale-95"
           title="设置"
         >
           <Settings size={18} />
         </button>
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-colors"
+          className="p-1.5 rounded hover:bg-surface0 text-subtext0 hover:text-text transition-all duration-200 hover:scale-105 active:scale-95"
           title="切换主题"
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}

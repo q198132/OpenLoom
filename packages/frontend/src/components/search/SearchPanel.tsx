@@ -47,7 +47,7 @@ export default function SearchPanel() {
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="搜索文件内容..."
-          className="w-full px-2 py-1.5 text-xs bg-surface0 border border-surface1 rounded text-text placeholder:text-overlay0 focus:outline-none focus:border-accent"
+          className="w-full px-2 py-1.5 text-xs bg-surface0 border border-surface1 rounded-lg text-text placeholder:text-overlay0 focus:outline-none focus:border-accent input-glow transition-all duration-200"
           autoFocus
         />
       </div>

@@ -27,8 +27,8 @@ function PasswordDialog({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-base border border-surface0 rounded-lg w-[320px]">
+    <div className="dialog-overlay fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="dialog-content bg-base/95 backdrop-blur-xl border border-surface0/60 rounded-xl shadow-2xl w-[320px]">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-surface0">
           <Key size={16} className="text-accent" />
           <span className="text-sm font-medium text-text">输入密码</span>
@@ -46,20 +46,20 @@ function PasswordDialog({
             onChange={(e) => setPassword(e.target.value)}
             placeholder="密码"
             autoFocus
-            className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+            className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={onCancel}
-              className="px-3 py-1.5 text-sm text-overlay0 hover:text-text"
+              className="px-3 py-1.5 text-sm text-overlay0 hover:text-text transition-colors"
             >
               取消
             </button>
             <button
               type="submit"
               disabled={!password || loading}
-              className="px-3 py-1.5 text-sm bg-accent text-crust rounded hover:bg-accent/80 disabled:opacity-50"
+              className="px-3 py-1.5 text-sm bg-accent text-crust rounded-lg hover:bg-accent/80 disabled:opacity-50 transition-all duration-200 active:scale-[0.97]"
             >
               {loading ? '连接中...' : '连接'}
             </button>
@@ -245,7 +245,7 @@ export default function SSHPanel() {
                   }
                 }}
                 placeholder="相对或绝对路径"
-                className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded border border-surface1 focus:border-accent outline-none"
+                className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
                 autoFocus
               />
               <button
@@ -257,7 +257,7 @@ export default function SSHPanel() {
                   await setWorkingDir(path);
                   setShowDirInput(false);
                 }}
-                className="px-2 py-1 text-xs bg-accent/20 text-accent rounded hover:bg-accent/30"
+                className="px-2 py-1 text-xs bg-accent/20 text-accent rounded-lg hover:bg-accent/30 active:scale-95 transition-all duration-200"
               >
                 确定
               </button>
@@ -289,10 +289,10 @@ export default function SSHPanel() {
               return (
                 <div
                   key={conn.id}
-                  className={`p-2 rounded border ${
+                  className={`p-2 rounded-lg border transition-all duration-200 ${
                     isActive
                       ? 'border-green/50 bg-green/5'
-                      : 'border-surface0 hover:border-surface1'
+                      : 'border-surface0 hover:border-surface1 hover:bg-surface0/30'
                   }`}
                 >
                   <div className="flex items-center gap-2">
@@ -383,11 +383,11 @@ export default function SSHPanel() {
             onChange={(e) => setQuickConnect(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleQuickConnect()}
             placeholder="user@host[:port]"
-            className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded border border-surface1 focus:border-accent outline-none"
+            className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
           />
           <button
             onClick={handleQuickConnect}
-            className="px-2 py-1 text-xs bg-accent/20 text-accent rounded hover:bg-accent/30"
+            className="px-2 py-1 text-xs bg-accent/20 text-accent rounded-lg hover:bg-accent/30 active:scale-95 transition-all duration-200"
           >
             连接
           </button>

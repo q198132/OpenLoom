@@ -24,7 +24,7 @@ export default function GitActions() {
       <button
         onClick={handlePull}
         disabled={pulling}
-        className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-surface0 text-subtext1 hover:bg-surface1 disabled:opacity-50 transition-colors"
+        className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-surface0 text-subtext1 hover:bg-surface1 disabled:opacity-50 transition-all duration-200 active:scale-95"
       >
         {pulling ? <Loader2 size={13} className="animate-spin" /> : <ArrowDown size={13} />}
         Pull
@@ -32,7 +32,7 @@ export default function GitActions() {
       <button
         onClick={handlePush}
         disabled={pushing}
-        className="flex items-center gap-1 px-2 py-1 text-xs rounded bg-surface0 text-subtext1 hover:bg-surface1 disabled:opacity-50 transition-colors"
+        className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-surface0 text-subtext1 hover:bg-surface1 disabled:opacity-50 transition-all duration-200 active:scale-95"
       >
         {pushing ? <Loader2 size={13} className="animate-spin" /> : <ArrowUp size={13} />}
         Push

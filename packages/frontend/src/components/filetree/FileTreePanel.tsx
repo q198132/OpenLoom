@@ -245,12 +245,12 @@ export default function FileTreePanel() {
                   if (e.key === 'Escape') setShowDirInput(false);
                 }}
                 placeholder="输入远程目录路径"
-                className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded border border-surface1 focus:border-accent outline-none"
+                className="flex-1 bg-surface0 text-text text-xs px-2 py-1 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
                 autoFocus
               />
               <button
                 onClick={handleOpenRemoteFolder}
-                className="px-2 py-1 text-xs bg-accent/20 text-accent rounded hover:bg-accent/30"
+                className="px-2 py-1 text-xs bg-accent/20 text-accent rounded-lg hover:bg-accent/30 active:scale-95 transition-all duration-200"
               >
                 打开
               </button>

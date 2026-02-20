@@ -61,11 +61,11 @@ export default function SettingsDialog() {
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex justify-center pt-[12vh] z-50"
+      className="dialog-overlay fixed inset-0 bg-black/40 flex justify-center pt-[12vh] z-50"
       onClick={toggleSettings}
     >
       <div
-        className="bg-base border border-surface0 rounded-lg shadow-xl w-[480px] max-h-[560px] flex flex-col"
+        className="dialog-content bg-base/95 backdrop-blur-xl border border-surface0/60 rounded-xl shadow-2xl w-[480px] max-h-[560px] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 标题栏 */}
@@ -116,14 +116,14 @@ export default function SettingsDialog() {
         <div className="flex gap-2 px-4 py-3 border-t border-surface0">
           <button
             onClick={toggleSettings}
-            className="flex-1 py-1.5 text-xs rounded bg-surface1 text-subtext1 hover:bg-surface2 transition-colors"
+            className="flex-1 py-1.5 text-xs rounded-lg bg-surface1 text-subtext1 hover:bg-surface2 transition-all duration-200 active:scale-[0.97]"
           >
             取消
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex-1 py-1.5 text-xs font-medium rounded bg-accent text-crust hover:bg-accent/80 disabled:opacity-40 transition-colors"
+            className="flex-1 py-1.5 text-xs font-medium rounded-lg bg-accent text-crust hover:bg-accent/80 disabled:opacity-40 transition-all duration-200 active:scale-[0.97] shadow-[0_0_12px_var(--color-accent)/20]"
           >
             {saving ? '保存中...' : '保存'}
           </button>
@@ -190,7 +190,7 @@ function ShortcutsTab({
             type="text"
             value={form.shortcuts[key]}
             onChange={(e) => updateShortcut(key, e.target.value)}
-            className="w-full px-2 py-1.5 text-xs bg-crust border border-surface0 rounded text-text placeholder:text-overlay0 focus:outline-none focus:border-accent"
+            className="w-full px-2 py-1.5 text-xs bg-crust border border-surface0 rounded-lg text-text placeholder:text-overlay0 focus:outline-none focus:border-accent input-glow transition-all duration-200"
           />
         </Field>
       ))}

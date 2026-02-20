@@ -86,8 +86,8 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-base border border-surface0 rounded-lg w-[400px] max-h-[90vh] overflow-auto">
+    <div className="dialog-overlay fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="dialog-content bg-base/95 backdrop-blur-xl border border-surface0/60 rounded-xl shadow-2xl w-[400px] max-h-[90vh] overflow-auto">
         {/* 标题 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-surface0">
           <span className="text-sm font-medium text-text">
@@ -111,7 +111,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="My Server"
-              className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+              className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
             />
           </div>
 
@@ -123,7 +123,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
               value={host}
               onChange={(e) => setHost(e.target.value)}
               placeholder="192.168.1.100"
-              className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+              className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
             />
           </div>
 
@@ -135,7 +135,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
                 type="number"
                 value={port}
                 onChange={(e) => setPort(parseInt(e.target.value) || 22)}
-                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
               />
             </div>
             <div className="flex-1">
@@ -145,7 +145,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="root"
-                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
                 value={privateKeyPath}
                 onChange={(e) => setPrivateKeyPath(e.target.value)}
                 placeholder="~/.ssh/id_rsa"
-                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
               />
             </div>
           )}
@@ -202,7 +202,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded border border-surface1 focus:border-accent outline-none"
+                className="w-full bg-surface0 text-text text-sm px-3 py-2 rounded-lg border border-surface1 focus:border-accent outline-none input-glow transition-all duration-200"
               />
             </div>
           )}
@@ -219,7 +219,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-2 text-sm bg-accent text-crust rounded hover:bg-accent/80 disabled:opacity-50"
+              className="px-4 py-2 text-sm bg-accent text-crust rounded-lg hover:bg-accent/80 disabled:opacity-50 transition-all duration-200 active:scale-[0.97]"
             >
               {saving ? '保存中...' : '保存'}
             </button>
