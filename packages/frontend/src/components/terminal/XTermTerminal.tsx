@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import { WebLinksAddon } from 'xterm-addon-web-links';
-import { open } from '@tauri-apps/plugin-shell';
-import 'xterm/css/xterm.css';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import { WebLinksAddon } from '@xterm/addon-web-links';
+import '@xterm/xterm/css/xterm.css';
 
 interface XTermTerminalProps {
   id: string;
@@ -21,14 +20,11 @@ const XTermTerminal: React.FC<XTermTerminalProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const terminalRef = useRef<Terminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
-  const linkProviderRef = useRef<any>(null);
 
   // 链接点击处理函数
   const handleLinkClick = useCallback((url: string) => {
     console.log('终端中点击链接:', url);
-    open(url).catch((err) => {
-      console.error('打开链接失败:', err);
-    });
+    window.open(url, '_blank');
   }, []);
 
   // 初始化终端
@@ -65,23 +61,10 @@ const XTermTerminal: React.FC<XTermTerminalProps> = ({
 
     // 创建web links插件 - 使用默认的链接处理
     const webLinksAddon = new WebLinksAddon(
-      (event, uri) => {
-        // 阻止默认行为
+      (event: MouseEvent, uri: string) => {
         event.preventDefault();
-        // 使用Tauri的shell插件打开链接
         handleLinkClick(uri);
       },
-      {
-        // 可选的配置
-        tooltipCallback: (event, text, range) => {
-          // 可以在这里显示自定义tooltip
-        },
-        leaveCallback: () => {
-          // 鼠标离开时隐藏tooltip
-        },
-      },
-      // 允许在链接上显示下划线
-      true
     );
     terminal.loadAddon(webLinksAddon);
 
