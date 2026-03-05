@@ -14,7 +14,8 @@ export default function TerminalTabBar() {
   };
 
   return (
-    <div className="flex items-center h-8 bg-mantle border-b border-surface0 overflow-x-auto">
+    <div className="flex items-center h-8 bg-mantle border-b border-surface0">
+      <div className="flex-1 flex items-center overflow-x-auto scrollbar-none">
       {tabs.map((tab) => (
         <div
           key={tab.id}
@@ -44,7 +45,8 @@ export default function TerminalTabBar() {
           </button>
         </div>
       ))}
-      <div className="relative">
+      </div>
+      <div className="relative shrink-0">
         <button
           className="flex items-center justify-center h-full px-2 text-overlay1 hover:text-text hover:bg-surface0 transition-colors gap-1"
           onClick={() => setShowShellMenu(!showShellMenu)}
