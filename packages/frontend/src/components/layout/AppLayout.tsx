@@ -77,7 +77,7 @@ export default function AppLayout() {
           <PanelGroup direction="vertical">
             <Panel
               defaultSize={60}
-              minSize={20}
+              minSize={0}
               id="editor"
               order={1}
             >
@@ -86,7 +86,7 @@ export default function AppLayout() {
             <PanelResizeHandle className="h-[3px]" />
             <Panel
               defaultSize={40}
-              minSize={15}
+              minSize={5}
               id="terminal"
               order={2}
             >
