@@ -88,6 +88,22 @@ export default function EditorPanel() {
     monaco.editor.setTheme(
       theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte',
     );
+
+    // 禁用拼写检查和语法诊断（去掉波浪线）
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+    });
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+      noSemanticValidation: true,
+      noSyntaxValidation: true,
+    });
+
+    // 禁用所有语言的诊断
+    const model = editor.getModel();
+    if (model) {
+      monaco.editor.setModelMarkers(model, 'typescript', []);
+    }
   };
 
   // 主题切换
@@ -187,10 +203,13 @@ export default function EditorPanel() {
                     fontSize: 14,
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
-                    renderLineHighlight: 'line',
+                    renderLineHighlight: 'all', // 高亮整行（包括右侧空白区域）
                     cursorBlinking: 'smooth',
                     smoothScrolling: true,
                     padding: { top: 8 },
+                    // 禁用语法和拼写检查（去掉波浪线）
+                    'semanticHighlighting.enabled': false, // 禁用语义高亮
+                    // 保留其他有用的功能（代码补全、自动括号等）
                   }}
                 />
               )

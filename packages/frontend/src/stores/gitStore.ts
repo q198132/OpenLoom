@@ -102,6 +102,7 @@ interface GitState {
   push: () => Promise<boolean>;
   pull: () => Promise<boolean>;
   sync: () => Promise<boolean>;
+  init: () => Promise<boolean>;
 }
 
 export const useGitStore = create<GitState>((set, get) => ({
@@ -362,6 +363,38 @@ export const useGitStore = create<GitState>((set, get) => ({
       return false;
     } finally {
       set({ syncing: false });
+    }
+  },
+
+  init: async () => {
+    set({ error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    // SSH 模式暂不支持 init
+    if (isRemote) {
+      set({ error: 'SSH 模式暂不支持初始化 Git 仓库' });
+      return false;
+    }
+
+    try {
+      const data = await api.gitInit();
+      if (data.ok) {
+        // 初始化成功后刷新 Git 状态
+        await Promise.all([
+          get().fetchStatus(),
+          get().fetchBranch(),
+          get().fetchLog(),
+          get().fetchSyncStatus(),
+        ]);
+        return true;
+      }
+      set({ error: '初始化失败' });
+      return false;
+    } catch (e: any) {
+      set({ error: e.toString() || '初始化失败' });
+      return false;
     }
   },
 }));

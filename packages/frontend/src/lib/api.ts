@@ -129,6 +129,10 @@ export async function gitWorkingDiff(file: string, staged?: boolean): Promise<st
   return invoke('git_working_diff', { file, staged: staged || null });
 }
 
+export async function gitInit(): Promise<{ ok: boolean; message: string }> {
+  return invoke('git_init');
+}
+
 // ===== Workspace =====
 
 export interface WorkspaceInfo {

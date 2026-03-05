@@ -248,4 +248,14 @@ router.get('/working-diff', async (req, res) => {
   }
 });
 
+// POST /api/git/init — 初始化 Git 仓库
+router.post('/init', async (_req, res) => {
+  try {
+    await git('init');
+    res.json({ ok: true, message: 'Git 仓库初始化成功' });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 export default router;

@@ -105,10 +105,11 @@ export default function FileTreeItem({
   onRenameConfirm, onCreateConfirm, onEditCancel,
   gitFiles = [],
 }: Props) {
-  const { expandedPaths, toggleExpand, selectedPath, setSelected, fetchChildren } =
+  const { expandedPaths, toggleExpand, selectedPath, setSelected, fetchChildren, renameNode } =
     useFileTreeStore();
   const [children, setChildren] = useState<FileNode[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   const isExpanded = expandedPaths.has(node.path);
   const isSelected = selectedPath === node.path;
@@ -167,11 +168,85 @@ export default function FileTreeItem({
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // 拖拽处理
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!node.isDirectory) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    if (!node.isDirectory) return;
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    if (!node.isDirectory) return;
+    e.preventDefault();
+    // 只有真正离开元素时才取消高亮
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    if (!node.isDirectory) return;
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const sourcePath = e.dataTransfer.getData('text/plain');
+    if (!sourcePath) return;
+
+    // 获取源文件名
+    const sourceName = sourcePath.split('/').pop() || sourcePath.split('\\').pop();
+    if (!sourceName) return;
+
+    // 构造目标路径
+    const isRemote = useFileTreeStore.getState().isRemote;
+    let targetPath: string;
+    
+    if (isRemote) {
+      // 远程模式：node.path 已经是绝对路径
+      targetPath = node.path.endsWith('/') 
+        ? node.path + sourceName 
+        : node.path + '/' + sourceName;
+    } else {
+      // 本地模式：node.path 是相对路径
+      targetPath = node.path ? node.path + '/' + sourceName : sourceName;
+    }
+
+    // 检查是否拖到自己身上
+    if (sourcePath === targetPath) return;
+
+    // 检查是否拖到自己的子文件夹
+    if (sourcePath.startsWith(targetPath.substring(0, targetPath.lastIndexOf('/')))) {
+      alert('不能将文件移动到自身或其子文件夹');
+      return;
+    }
+
+    try {
+      await renameNode(sourcePath, targetPath);
+      // 刷新文件树
+      window.dispatchEvent(new CustomEvent('file-tree-refresh'));
+    } catch (error: any) {
+      console.error('[FileTree] Move failed:', error);
+      alert(`移动失败: ${error.message || '未知错误'}`);
+    }
+  };
+
   return (
     <div>
       <div
         className={`flex items-center h-7 cursor-pointer select-none transition-all duration-150 ${
-          isSelected ? 'bg-accent/10 text-accent border-l-2 border-accent' : 'text-subtext1 hover:bg-surface0/70 border-l-2 border-transparent'
+          isSelected 
+            ? 'bg-accent/10 text-accent border-l-2 border-accent' 
+            : isDragOver
+              ? 'bg-accent/20 text-accent border-l-2 border-accent'
+              : 'text-subtext1 hover:bg-surface0/70 border-l-2 border-transparent'
         }`}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         draggable
@@ -187,8 +262,12 @@ export default function FileTreeItem({
             path = root ? `${root}/${node.path}` : node.path;
           }
           e.dataTransfer.setData('text/plain', path);
-          e.dataTransfer.effectAllowed = 'copy';
+          e.dataTransfer.effectAllowed = 'move';
         }}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         onClick={handleClick}
         onContextMenu={(e) => onContextMenu?.(e, node)}
       >

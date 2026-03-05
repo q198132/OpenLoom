@@ -1,33 +1,33 @@
+use crate::state::AppState;
+use notify_debouncer_mini::new_debouncer;
 use std::path::PathBuf;
 use std::sync::mpsc;
 use std::time::Duration;
-use notify_debouncer_mini::new_debouncer;
 use tauri::{AppHandle, Emitter};
-use crate::state::AppState;
 
 const IGNORED_DIRS: &[&str] = &[
-    "node_modules", ".git", "dist", ".next", ".nuxt",
-    ".output", "coverage", "__pycache__",
+    "node_modules",
+    ".git",
+    "dist",
+    ".next",
+    ".nuxt",
+    ".output",
+    "coverage",
+    "__pycache__",
 ];
 
 fn is_ignored_path(rel: &str) -> bool {
     rel.split('/').any(|p| IGNORED_DIRS.contains(&p))
 }
 
-pub fn start_watcher(
-    app: AppHandle,
-    state: &AppState,
-) {
+pub fn start_watcher(app: AppHandle, state: &AppState) {
     let root = state.get_root();
     let root_clone = root.clone();
 
     std::thread::spawn(move || {
         let (tx, rx) = mpsc::channel();
 
-        let mut debouncer = match new_debouncer(
-            Duration::from_millis(300),
-            tx,
-        ) {
+        let mut debouncer = match new_debouncer(Duration::from_millis(300), tx) {
             Ok(d) => d,
             Err(e) => {
                 eprintln!("[watcher] failed to create: {}", e);
@@ -35,10 +35,10 @@ pub fn start_watcher(
             }
         };
 
-        if let Err(e) = debouncer.watcher().watch(
-            &root_clone,
-            notify::RecursiveMode::Recursive,
-        ) {
+        if let Err(e) = debouncer
+            .watcher()
+            .watch(&root_clone, notify::RecursiveMode::Recursive)
+        {
             eprintln!("[watcher] failed to watch: {}", e);
             return;
         }
@@ -49,11 +49,7 @@ pub fn start_watcher(
             match rx.recv() {
                 Ok(Ok(events)) => {
                     for event in events {
-                        handle_event(
-                            &app,
-                            &root_clone,
-                            &event,
-                        );
+                        handle_event(&app, &root_clone, &event);
                     }
                 }
                 Ok(Err(e)) => {
@@ -65,11 +61,7 @@ pub fn start_watcher(
     });
 }
 
-fn handle_event(
-    app: &AppHandle,
-    root: &PathBuf,
-    event: &notify_debouncer_mini::DebouncedEvent,
-) {
+fn handle_event(app: &AppHandle, root: &PathBuf, event: &notify_debouncer_mini::DebouncedEvent) {
     let path = &event.path;
     let rel = match path.strip_prefix(root) {
         Ok(r) => r.to_string_lossy().replace('\\', "/"),
@@ -82,15 +74,23 @@ fn handle_event(
 
     if path.exists() && path.is_file() {
         // file-changed: add or change
-        let _ = app.emit("file-changed", serde_json::json!({
-            "event": "change",
-            "path": rel,
-        }));
+        let _ = app.emit(
+            "file-changed",
+            serde_json::json!({
+                "type": "file-changed",
+                "event": "change",
+                "path": rel,
+            }),
+        );
     } else {
         // file-changed: unlink
-        let _ = app.emit("file-changed", serde_json::json!({
-            "event": "unlink",
-            "path": rel,
-        }));
+        let _ = app.emit(
+            "file-changed",
+            serde_json::json!({
+                "type": "file-changed",
+                "event": "unlink",
+                "path": rel,
+            }),
+        );
     }
 }

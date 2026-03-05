@@ -81,6 +81,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
         useFileTreeStore.getState().refreshRoot();
         useGitStore.getState().fetchStatus();
         useGitStore.getState().fetchBranch();
+        useGitStore.getState().fetchLog();
+        useGitStore.getState().fetchSyncStatus();
 
         return true;
       }

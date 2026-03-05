@@ -39,9 +39,11 @@ export default function FolderBrowserDialog() {
 
   useEffect(() => {
     if (browserOpen) {
-      browse(currentPath || '');
+      // 打开时自动浏览当前路径或用户主目录
+      const initialPath = currentPath || (navigator.platform.includes('Win') ? 'C:\\' : '/');
+      browse(initialPath);
     }
-  }, [browserOpen, currentPath, browse]);
+  }, [browserOpen, browse]);
 
   const handleOpen = () => {
     if (inputPath.trim()) {
@@ -164,8 +166,7 @@ export default function FolderBrowserDialog() {
               {browseData.dirs.map((d) => (
                 <button
                   key={d.path}
-                  onDoubleClick={() => browse(d.path)}
-                  onClick={() => setInputPath(d.path)}
+                  onClick={() => browse(d.path)}
                   className="w-full text-left px-3 py-1.5 text-sm text-text hover:bg-surface0 rounded transition-colors flex items-center gap-2"
                 >
                   <FolderOpen size={14} className="text-yellow" />

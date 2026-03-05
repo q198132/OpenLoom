@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { PanelLeftClose, PanelLeftOpen, Sun, Moon, FolderOpen, ChevronDown, Settings, Github } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
+import { open } from '@tauri-apps/plugin-dialog';
+import WindowControls from './WindowControls';
 
 export default function TopBar() {
   const { sidebarVisible, toggleSidebar, theme, setTheme, toggleSettings } = useLayoutStore();
-  const { projectName, currentPath, recentProjects, fetchWorkspace, fetchRecent, openFolder, setBrowserOpen } = useWorkspaceStore();
+  const { projectName, currentPath, recentProjects, fetchWorkspace, fetchRecent, openFolder } = useWorkspaceStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -25,8 +27,24 @@ export default function TopBar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [dropdownOpen]);
 
+  // 打开原生文件夹选择器
+  const handleOpenFolder = async () => {
+    setDropdownOpen(false);
+    const selected = await open({
+      directory: true,
+      multiple: false,
+      defaultPath: currentPath || undefined,
+    });
+    if (selected) {
+      openFolder(selected as string);
+    }
+  };
+
   return (
-    <div className="flex items-center justify-between h-10 px-3 bg-mantle border-b border-surface0 select-none">
+    <div 
+      className="flex items-center justify-between h-10 px-3 bg-mantle border-b border-surface0 select-none"
+      data-tauri-drag-region
+    >
       <div className="flex items-center gap-2">
         <button
           onClick={toggleSidebar}
@@ -35,7 +53,7 @@ export default function TopBar() {
         >
           {sidebarVisible ? <PanelLeftClose size={18} /> : <PanelLeftOpen size={18} />}
         </button>
-        <span className="text-sm font-semibold text-accent tracking-wide">
+        <span className="text-sm font-semibold text-accent tracking-wide" data-tauri-drag-region>
           OpenLoom
         </span>
 
@@ -53,7 +71,7 @@ export default function TopBar() {
           {dropdownOpen && (
             <div className="dropdown-anim absolute top-full left-0 mt-1 w-64 bg-surface0/80 backdrop-blur-xl border border-surface1/60 rounded-lg shadow-2xl z-50 py-1">
               <button
-                onClick={() => { setDropdownOpen(false); setBrowserOpen(true); }}
+                onClick={handleOpenFolder}
                 className="w-full text-left px-3 py-2 text-sm text-text hover:bg-surface1 transition-colors flex items-center gap-2"
               >
                 <FolderOpen size={14} className="text-accent" />
@@ -113,6 +131,7 @@ export default function TopBar() {
         >
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+        <WindowControls />
       </div>
     </div>
   );

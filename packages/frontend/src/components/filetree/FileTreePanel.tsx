@@ -93,6 +93,15 @@ export default function FileTreePanel() {
 
   useControlSocket(onControlMessage);
 
+  // 监听文件树刷新事件
+  useEffect(() => {
+    const handleRefresh = () => {
+      refreshAll();
+    };
+    window.addEventListener('file-tree-refresh', handleRefresh);
+    return () => window.removeEventListener('file-tree-refresh', handleRefresh);
+  }, [refreshAll]);
+
   // 初始化加载（只在组件挂载时执行一次）
   useEffect(() => {
     if (!mountedRef.current) {
