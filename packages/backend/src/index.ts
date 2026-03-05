@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { DEFAULT_PORT, API_PREFIX } from '@openloom/shared';
-import { PtyManager } from './pty/ptyManager.js';
+import { PtyManager, type ShellType } from './pty/ptyManager.js';
 import { setupWebSocket } from './ws/wsHandler.js';
 import fileRoutes from './api/fileRoutes.js';
 import gitRoutes from './api/gitRoutes.js';
@@ -36,12 +36,20 @@ app.use(`${API_PREFIX}/workspace`, workspaceRoutes);
 // SSH API
 app.use(`${API_PREFIX}/ssh`, sshRoutes);
 
+// PTY spawn API - 支持指定 shell 类型
+app.post(`${API_PREFIX}/pty/spawn`, (req, res) => {
+  const { shellType } = req.body as { shellType?: ShellType };
+  const cwd = workspaceManager.getRoot().to_string_lossy().to_string();
+  try {
+    ptyManager.spawn(80, 24, cwd, shellType || 'powershell');
+    res.json({ success: true, pid: ptyManager.pid });
+  } catch (error) {
+    res.status(500).json({ success: false, error: String(error) });
+  }
+});
+
 const server = createServer(app);
 const ptyManager = new PtyManager();
-
-// 启动 PTY
-ptyManager.spawn();
-console.log(`[pty] spawned, pid: ${ptyManager.pid}`);
 
 // 设置 WebSocket
 const { broadcast } = setupWebSocket(server, ptyManager);

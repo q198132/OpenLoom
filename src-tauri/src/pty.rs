@@ -22,6 +22,19 @@ pub struct PtyExitPayload {
     pub id: u32,
 }
 
+#[derive(Debug, Clone, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ShellType {
+    Powershell,
+    Cmd,
+}
+
+impl Default for ShellType {
+    fn default() -> Self {
+        ShellType::Powershell
+    }
+}
+
 pub struct PtyManager {
     instances: Mutex<HashMap<u32, PtyInstance>>,
     next_id: AtomicU32,
@@ -35,7 +48,7 @@ impl PtyManager {
         }
     }
 
-    pub fn spawn(&self, app: AppHandle, cwd: String) -> Result<u32, String> {
+    pub fn spawn(&self, app: AppHandle, cwd: String, shell_type: Option<ShellType>) -> Result<u32, String> {
         let id = self.next_id.fetch_add(1, Ordering::SeqCst);
 
         let pty_system = native_pty_system();
@@ -48,7 +61,24 @@ impl PtyManager {
             })
             .map_err(|e| e.to_string())?;
 
-        let mut cmd = CommandBuilder::new_default_prog();
+        // 根据 shell 类型构建命令
+        let mut cmd = if cfg!(target_os = "windows") {
+            match shell_type.unwrap_or_default() {
+                ShellType::Cmd => {
+                    let mut c = CommandBuilder::new("cmd.exe");
+                    c.arg("/K"); // 保持终端打开
+                    c
+                }
+                ShellType::Powershell => {
+                    let mut p = CommandBuilder::new("powershell.exe");
+                    p.arg("-NoExit");
+                    p
+                }
+            }
+        } else {
+            CommandBuilder::new_default_prog()
+        };
+
         // Windows canonicalize 产生的 \\?\ 前缀 CMD 不支持，需要去掉
         #[cfg(target_os = "windows")]
         let cwd = if let Some(stripped) = cwd.strip_prefix(r"\\?\") {

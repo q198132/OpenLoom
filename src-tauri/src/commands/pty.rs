@@ -1,5 +1,5 @@
 use tauri::State;
-use crate::pty::PtyManager;
+use crate::pty::{PtyManager, ShellType};
 use crate::state::AppState;
 use crate::commands::ssh::SSHManager;
 
@@ -9,6 +9,7 @@ pub fn pty_spawn(
     pty: State<'_, PtyManager>,
     state: State<'_, AppState>,
     ssh: State<'_, SSHManager>,
+    shell_type: Option<ShellType>,
 ) -> Result<u32, String> {
     // 检查是否有活跃的 SSH 会话
     if let Some((host, port, username, private_key_path)) = ssh.get_active_session_info() {
@@ -17,7 +18,7 @@ pub fn pty_spawn(
     } else {
         // 本地终端
         let cwd = state.get_root().to_string_lossy().to_string();
-        pty.spawn(app, cwd)
+        pty.spawn(app, cwd, shell_type)
     }
 }
 

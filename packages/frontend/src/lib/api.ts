@@ -172,8 +172,8 @@ export async function generateCommitMessage(diff: string, stat: string): Promise
 
 // ===== PTY =====
 
-export async function ptySpawn(): Promise<number> {
-  return invoke('pty_spawn');
+export async function ptySpawn(shellType?: 'powershell' | 'cmd'): Promise<number> {
+  return invoke('pty_spawn', { shellType: shellType || null });
 }
 
 export async function ptyWrite(id: number, data: string) {
