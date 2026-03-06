@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { FileNode } from '@openloom/shared';
 import * as api from '@/lib/api';
 import { useSSHStore } from './sshStore';
+import { showError } from './errorStore';
 
 interface FileTreeState {
   nodes: FileNode[];
@@ -54,6 +55,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
     } catch (error: any) {
       console.error(`[FileTree] fetchChildren("${dir}") error:`, error);
       set({ error: error.message || '获取文件列表失败' });
+      showError('获取文件列表失败', error, '获取文件列表失败');
       return [];
     }
   },
@@ -99,6 +101,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       return true;
     } catch (e: any) {
       set({ error: e.message || '创建文件失败' });
+      showError('创建文件失败', e, '创建文件失败');
       return false;
     }
   },
@@ -117,6 +120,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       return true;
     } catch (e: any) {
       set({ error: e.message || '创建目录失败' });
+      showError('创建目录失败', e, '创建目录失败');
       return false;
     }
   },
@@ -135,6 +139,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       return true;
     } catch (e: any) {
       set({ error: e.message || '重命名失败' });
+      showError('重命名失败', e, '重命名失败');
       return false;
     }
   },
@@ -173,6 +178,7 @@ export const useFileTreeStore = create<FileTreeState>((set, get) => ({
       return true;
     } catch (e: any) {
       set({ error: e.message || '删除失败' });
+      showError('删除失败', e, '删除失败');
       return false;
     }
   },

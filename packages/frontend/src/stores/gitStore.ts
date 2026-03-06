@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { GitFileStatus, GitLogEntry, GitBranchInfo } from '@openloom/shared';
 import * as api from '@/lib/api';
 import { useSSHStore } from './sshStore';
+import { showError } from './errorStore';
 
 // 解析 SSH git status 输出
 function parseSshGitStatus(output: string): GitFileStatus[] {
@@ -98,6 +99,8 @@ interface GitState {
   stageFiles: (paths: string[]) => Promise<void>;
   stageAll: () => Promise<void>;
   unstageFiles: (paths: string[]) => Promise<void>;
+  discardFiles: (paths: string[]) => Promise<boolean>;
+  discardAll: () => Promise<boolean>;
   commit: () => Promise<boolean>;
   push: () => Promise<boolean>;
   pull: () => Promise<boolean>;
@@ -250,6 +253,58 @@ export const useGitStore = create<GitState>((set, get) => ({
     }
   },
 
+  discardFiles: async (paths) => {
+    set({ error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    if (isRemote) {
+      const msg = 'SSH 模式暂不支持放弃更改';
+      set({ error: msg });
+      showError('Git 放弃更改失败', msg, msg);
+      return false;
+    }
+
+    try {
+      await api.gitDiscardPaths(paths);
+      await get().fetchStatus();
+      return true;
+    } catch (e: any) {
+      const msg = e?.toString?.() || '放弃更改失败';
+      set({ error: msg });
+      showError('Git 放弃更改失败', e, '放弃更改失败');
+      return false;
+    }
+  },
+
+  discardAll: async () => {
+    set({ error: null });
+
+    const sshSession = useSSHStore.getState().session;
+    const isRemote = sshSession?.status === 'connected';
+
+    if (isRemote) {
+      const msg = 'SSH 模式暂不支持全部放弃更改';
+      set({ error: msg });
+      showError('Git 全部放弃失败', msg, msg);
+      return false;
+    }
+
+    try {
+      await api.gitDiscardAll();
+      await get().fetchStatus();
+      await get().fetchLog();
+      await get().fetchSyncStatus();
+      return true;
+    } catch (e: any) {
+      const msg = e?.toString?.() || '全部放弃失败';
+      set({ error: msg });
+      showError('Git 全部放弃失败', e, '全部放弃失败');
+      return false;
+    }
+  },
+
   commit: async () => {
     const msg = get().commitMessage.trim();
     if (!msg) return false;
@@ -279,6 +334,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       }
     } catch (e: any) {
       set({ error: e.toString() || '提交失败' });
+      showError('Git 提交失败', e, '提交失败');
       return false;
     }
   },
@@ -292,6 +348,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     // SSH 模式暂不支持 push（需要更复杂的实现）
     if (isRemote) {
       set({ error: 'SSH 模式暂不支持 Push' });
+      showError('Git Push 失败', 'SSH 模式暂不支持 Push', 'SSH 模式暂不支持 Push');
       return false;
     }
 
@@ -300,6 +357,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       return !!data.ok;
     } catch (e: any) {
       set({ error: e.toString() || 'Push 失败' });
+      showError('Git Push 失败', e, 'Push 失败');
       return false;
     }
   },
@@ -313,6 +371,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     // SSH 模式暂不支持 pull
     if (isRemote) {
       set({ error: 'SSH 模式暂不支持 Pull' });
+      showError('Git Pull 失败', 'SSH 模式暂不支持 Pull', 'SSH 模式暂不支持 Pull');
       return false;
     }
 
@@ -327,6 +386,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       return false;
     } catch (e: any) {
       set({ error: e.toString() || 'Pull 失败' });
+      showError('Git Pull 失败', e, 'Pull 失败');
       return false;
     }
   },
@@ -340,6 +400,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     // SSH 模式暂不支持 sync
     if (isRemote) {
       set({ error: 'SSH 模式暂不支持同步', syncing: false });
+      showError('Git 同步失败', 'SSH 模式暂不支持同步', 'SSH 模式暂不支持同步');
       return false;
     }
 
@@ -360,6 +421,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       return false;
     } catch (e: any) {
       set({ error: e.toString() || '同步失败' });
+      showError('Git 同步失败', e, '同步失败');
       return false;
     } finally {
       set({ syncing: false });
@@ -375,6 +437,7 @@ export const useGitStore = create<GitState>((set, get) => ({
     // SSH 模式暂不支持 init
     if (isRemote) {
       set({ error: 'SSH 模式暂不支持初始化 Git 仓库' });
+      showError('Git 初始化失败', 'SSH 模式暂不支持初始化 Git 仓库', 'SSH 模式暂不支持初始化 Git 仓库');
       return false;
     }
 
@@ -394,6 +457,7 @@ export const useGitStore = create<GitState>((set, get) => ({
       return false;
     } catch (e: any) {
       set({ error: e.toString() || '初始化失败' });
+      showError('Git 初始化失败', e, '初始化失败');
       return false;
     }
   },

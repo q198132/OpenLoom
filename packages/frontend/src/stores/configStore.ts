@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import * as api from '@/lib/api';
 import type { Shortcuts, AiConfig } from '@/lib/api';
+import { showError } from './errorStore';
 
 export type { Shortcuts, AiConfig };
 
@@ -57,6 +58,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
       });
     } catch (error) {
       console.error('Failed to load config:', error);
+      showError('加载设置失败', error, '加载设置失败，已回退默认配置');
       set({ config: DEFAULT_CONFIG, loading: false });
     }
   },
@@ -74,6 +76,7 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
       set({ config: updated });
     } catch (error) {
       console.error('Failed to save config:', error);
+      showError('保存设置失败', error, '保存设置失败');
       throw error;
     }
   },

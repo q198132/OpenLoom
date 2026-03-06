@@ -1,5 +1,6 @@
 import { Minus, Square, X } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { showError } from '@/stores/errorStore';
 
 export default function WindowControls() {
   const handleMinimize = async () => {
@@ -7,6 +8,7 @@ export default function WindowControls() {
       await getCurrentWindow().minimize();
     } catch (e) {
       console.error('Failed to minimize:', e);
+      showError('窗口操作失败', e, '最小化失败');
     }
   };
 
@@ -15,6 +17,7 @@ export default function WindowControls() {
       await getCurrentWindow().toggleMaximize();
     } catch (e) {
       console.error('Failed to toggle maximize:', e);
+      showError('窗口操作失败', e, '切换最大化失败');
     }
   };
 
@@ -23,6 +26,7 @@ export default function WindowControls() {
       await getCurrentWindow().close();
     } catch (e) {
       console.error('Failed to close:', e);
+      showError('窗口操作失败', e, '关闭窗口失败');
     }
   };
 

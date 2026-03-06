@@ -4,6 +4,7 @@ import { useSSHStore } from '@/stores/sshStore';
 import { useFileTreeStore } from '@/stores/fileTreeStore';
 import SSHConnectionForm from './SSHConnectionForm';
 import type { SSHConnection } from '@openloom/shared';
+import { showError } from '@/stores/errorStore';
 
 // 密码输入弹窗组件
 function PasswordDialog({
@@ -156,10 +157,10 @@ export default function SSHPanel() {
   const handleQuickConnect = async () => {
     const match = quickConnect.match(/^(\S+)@(\S+)(?::(\d+))?$/);
     if (!match) {
-      alert('格式错误，请使用: user@host[:port]');
+      showError('SSH 快捷连接失败', '格式错误，请使用: user@host[:port]', '格式错误，请使用: user@host[:port]');
       return;
     }
-    alert('快捷连接需要密码或密钥，请使用添加连接功能');
+    showError('SSH 快捷连接失败', '快捷连接需要密码或密钥，请使用添加连接功能', '快捷连接需要密码或密钥，请使用添加连接功能');
   };
 
   const isConnected = session?.status === 'connected';

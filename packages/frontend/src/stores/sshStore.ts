@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { SSHConnection, SSHSession } from '@openloom/shared';
 import * as api from '@/lib/api';
 import { useFileTreeStore } from './fileTreeStore';
+import { showError } from './errorStore';
 
 interface SSHState {
   connections: SSHConnection[];
@@ -37,6 +38,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ connections, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      showError('加载 SSH 连接失败', error, '加载 SSH 连接失败');
     }
   },
 
@@ -49,6 +51,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       return newConn;
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      showError('SSH 连接保存失败', error, 'SSH 连接保存失败');
       throw error;
     }
   },
@@ -63,6 +66,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ connections, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      showError('SSH 连接更新失败', error, 'SSH 连接更新失败');
       throw error;
     }
   },
@@ -75,6 +79,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ connections, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false });
+      showError('SSH 连接删除失败', error, 'SSH 连接删除失败');
       throw error;
     }
   },
@@ -88,6 +93,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ session, workingDir, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false, session: null, workingDir: null });
+      showError('SSH 连接失败', error, 'SSH 连接失败');
       throw error;
     }
   },
@@ -100,6 +106,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ session, workingDir, isLoading: false });
     } catch (error: any) {
       set({ error: error.message, isLoading: false, session: null, workingDir: null });
+      showError('SSH 密码连接失败', error, 'SSH 密码连接失败');
       throw error;
     }
   },
@@ -110,6 +117,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       set({ session: null, workingDir: null });
     } catch (error: any) {
       set({ error: error.message });
+      showError('SSH 断开失败', error, 'SSH 断开失败');
     }
   },
 
@@ -135,6 +143,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
       useGitStore.getState().fetchBranch();
     } catch (error: any) {
       set({ error: error.message });
+      showError('SSH 切换工作目录失败', error, 'SSH 切换工作目录失败');
     }
   },
 

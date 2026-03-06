@@ -11,6 +11,22 @@ import ContextMenu from './ContextMenu';
 import InlineInput from './InlineInput';
 import type { FileNode, ControlMessage } from '@openloom/shared';
 
+function getRootDeletedPlaceholderNodes(
+  files: { path: string; status: string; staged: boolean }[],
+  existingNodes: FileNode[],
+): FileNode[] {
+  return files
+    .filter((file) => file.status === 'deleted')
+    .filter((file) => !file.path.includes('/'))
+    .filter((file) => !existingNodes.some((node) => node.path === file.path))
+    .map((file) => ({
+      name: file.path.split('/').pop() || file.path,
+      path: file.path,
+      isDirectory: false,
+      children: [],
+    }));
+}
+
 export default function FileTreePanel() {
   const { nodes, loading, isRemote, remoteRoot, refreshRoot, collapseAll, createFile, createDir, renameNode, deleteNode } = useFileTreeStore();
   const { files: gitFiles, fetchStatus: fetchGitStatus } = useGitStore();
@@ -210,9 +226,17 @@ export default function FileTreePanel() {
     clearEdit();
   };
 
+  const deletedGitFiles = gitFiles.filter((file) => file.status === 'deleted');
+  const liveGitFiles = gitFiles.filter((file) => file.status !== 'deleted');
+  const rootDeletedNodes = getRootDeletedPlaceholderNodes(gitFiles, nodes);
+  const rootNodes = [...nodes, ...rootDeletedNodes].sort((a, b) => {
+    if (a.isDirectory !== b.isDirectory) return a.isDirectory ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
   return (
-    <div className="h-full bg-mantle flex flex-col">
-      <div className="flex items-center justify-between h-9 px-3 border-b border-surface0">
+      <div className="h-full bg-mantle flex flex-col">
+      <div className="flex items-center justify-between h-9 px-3 border-b border-surface0/80 bg-[linear-gradient(180deg,rgba(30,30,46,0.96),rgba(24,24,37,0.88))]">
         <div className="flex items-center gap-2 text-xs font-medium text-subtext0 uppercase tracking-wider">
           {isRemote ? (
             <>
@@ -279,7 +303,7 @@ export default function FileTreePanel() {
         </div>
       )}
 
-      <div className="flex items-center justify-between h-7 px-3 group">
+      <div className="flex items-center justify-between h-7 px-3 group border-b border-surface0/40 bg-surface0/15">
         <span className="text-[11px] font-semibold text-subtext1 uppercase tracking-wider">文件</span>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -313,7 +337,7 @@ export default function FileTreePanel() {
         </div>
       </div>
       <div
-        className="flex-1 overflow-y-auto py-1"
+        className="flex-1 overflow-y-auto py-1.5 px-1"
         onContextMenu={handleBlankContextMenu}
       >
         {loading && nodes.length === 0 ? (
@@ -329,7 +353,7 @@ export default function FileTreePanel() {
                 onCancel={clearEdit}
               />
             )}
-            {nodes.map((node) => (
+            {rootNodes.map((node) => (
               <FileTreeItem
                 key={node.path}
                 node={node}
@@ -342,7 +366,8 @@ export default function FileTreePanel() {
                 onRenameConfirm={handleRenameConfirm}
                 onCreateConfirm={handleCreateConfirm}
                 onEditCancel={clearEdit}
-                gitFiles={gitFiles}
+                gitFiles={liveGitFiles}
+                deletedGitFiles={deletedGitFiles}
               />
             ))}
           </>

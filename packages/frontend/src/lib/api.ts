@@ -133,6 +133,14 @@ export async function gitInit(): Promise<{ ok: boolean; message: string }> {
   return invoke('git_init');
 }
 
+export async function gitDiscardPaths(paths: string[]): Promise<{ ok: boolean }> {
+  return invoke('git_discard_paths', { paths });
+}
+
+export async function gitDiscardAll(): Promise<{ ok: boolean }> {
+  return invoke('git_discard_all');
+}
+
 // ===== Workspace =====
 
 export interface WorkspaceInfo {

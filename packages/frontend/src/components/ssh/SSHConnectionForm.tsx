@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useSSHStore } from '@/stores/sshStore';
 import type { SSHConnection } from '@openloom/shared';
+import { showError } from '@/stores/errorStore';
 
 interface Props {
   connection: SSHConnection | null;
@@ -38,17 +39,17 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
     e.preventDefault();
 
     if (!name || !host || !username) {
-      alert('请填写名称、主机和用户名');
+      showError('表单校验失败', '请填写名称、主机和用户名', '请填写名称、主机和用户名');
       return;
     }
 
     if (authType === 'password' && !password && !isEditing) {
-      alert('请填写密码');
+      showError('表单校验失败', '请填写密码', '请填写密码');
       return;
     }
 
     if (authType === 'key' && !privateKeyPath) {
-      alert('请填写私钥路径');
+      showError('表单校验失败', '请填写私钥路径', '请填写私钥路径');
       return;
     }
 
@@ -79,7 +80,7 @@ export default function SSHConnectionForm({ connection, onClose }: Props) {
 
       onClose();
     } catch (error: any) {
-      alert('保存失败: ' + error.message);
+      showError('SSH 连接保存失败', error, '保存失败');
     } finally {
       setSaving(false);
     }

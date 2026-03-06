@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useConfigStore } from '@/stores/configStore';
 import type { AppConfig, Shortcuts, AiConfig } from '@/stores/configStore';
+import { showError } from '@/stores/errorStore';
 
 type Tab = 'general' | 'shortcuts' | 'ai';
 
@@ -52,6 +53,9 @@ export default function SettingsDialog() {
       await updateConfig(toSave);
     } catch (e) {
       console.error('Save failed:', e);
+      showError('设置保存失败', e, '设置保存失败');
+      setSaving(false);
+      return;
     }
     setSaving(false);
     toggleSettings();

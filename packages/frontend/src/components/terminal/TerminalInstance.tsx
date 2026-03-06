@@ -9,7 +9,7 @@ import * as api from '@/lib/api';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useConfigStore } from '@/stores/configStore';
-import { dragSourcePath, setDragSourcePath } from '@/components/filetree/FileTreeItem';
+import { dragSource, setDragSource } from '@/components/filetree/FileTreeItem';
 
 
 const DARK_THEME = {
@@ -97,22 +97,11 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     window.addEventListener('drop', onDrop);
     window.addEventListener('dragend', onDragEnd);
 
-    // Tauri v2 原生拖拽事件（系统文件管理器拖入）
-    let unlistenEnter: (() => void) | null = null;
-    let unlistenLeave: (() => void) | null = null;
-    let unlistenDrop: (() => void) | null = null;
-    listen('tauri://drag-enter', () => { setDragging(true); }).then((fn) => { unlistenEnter = fn; });
-    listen('tauri://drag-leave', () => { setDragging(false); }).then((fn) => { unlistenLeave = fn; });
-    listen('tauri://drag-drop', () => { setDragging(false); }).then((fn) => { unlistenDrop = fn; });
-
     return () => {
       window.removeEventListener('dragenter', onDragEnter);
       window.removeEventListener('dragleave', onDragLeave);
       window.removeEventListener('drop', onDrop);
       window.removeEventListener('dragend', onDragEnd);
-      unlistenEnter?.();
-      unlistenLeave?.();
-      unlistenDrop?.();
     };
   }, []);
 
@@ -381,18 +370,33 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     }
   }, [visible]);
 
-  // 监听 Tauri 原生文件拖放事件（支持文件和文件夹路径）
-  // Tauri v2 事件名：tauri://drag-drop，payload 为 DragDropEvent { type: 'drop', paths: string[], position: ... }
+  // 监听系统文件拖放事件（兼容 tauri://file-drop 和 tauri://drag-drop）
   useEffect(() => {
-    let unlisten: (() => void) | null = null;
-    listen<{ type: string; paths: string[] }>('tauri://drag-drop', (event) => {
-      if (visible && event.payload.type === 'drop' && event.payload.paths.length > 0) {
+    let unlistenFileDrop: (() => void) | null = null;
+    let unlistenDragDrop: (() => void) | null = null;
+
+    const writePaths = (paths: string[]) => {
+      if (visible && paths.length > 0) {
         setDragging(false);
-        const paths = event.payload.paths.map(p => p.includes(' ') ? `"${p}"` : p).join(' ');
-        api.ptyWrite(id, paths).catch(() => {});
+        const text = paths.map((p) => p.includes(' ') ? `"${p}"` : p).join(' ');
+        api.ptyWrite(id, text).catch(() => {});
       }
-    }).then((fn) => { unlisten = fn; });
-    return () => { unlisten?.(); };
+    };
+
+    listen<string[]>('tauri://file-drop', (event) => {
+      writePaths(event.payload);
+    }).then((fn) => { unlistenFileDrop = fn; });
+
+    listen<{ type: string; paths: string[] }>('tauri://drag-drop', (event) => {
+      if (event.payload.type === 'drop') {
+        writePaths(event.payload.paths);
+      }
+    }).then((fn) => { unlistenDragDrop = fn; });
+
+    return () => {
+      unlistenFileDrop?.();
+      unlistenDragDrop?.();
+    };
   }, [id, visible]);
 
   const handleOverlayDragOver = (e: React.DragEvent) => {
@@ -403,13 +407,12 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const handleOverlayDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    // 优先读模块级变量（dragDropEnabled:true 时 dataTransfer 可能被 Tauri 拦截）
-    const filePath = dragSourcePath || e.dataTransfer.getData('text/plain');
-    setDragSourcePath(null);
+    const filePath = dragSource?.terminalPath || e.dataTransfer.getData('text/plain');
+    setDragSource(null);
     if (filePath) {
       api.ptyWrite(id, filePath).catch(() => {});
     }
-    // 系统文件管理器拖入由 tauri://drag-drop 事件处理
+    // 系统文件管理器拖入由 Tauri 文件拖放事件处理
   };
 
   return (

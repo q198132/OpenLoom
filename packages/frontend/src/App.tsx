@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import AppLayout from './components/layout/AppLayout';
+import ErrorDialogHost from './components/common/ErrorDialogHost';
 import { useControlSocket } from './hooks/useWebSocket';
 import { useDiffReviewStore } from './stores/diffReviewStore';
 import { useLayoutStore } from './stores/layoutStore';
@@ -37,5 +38,10 @@ export default function App() {
 
   useControlSocket(onControlMessage);
 
-  return <AppLayout />;
+  return (
+    <>
+      <AppLayout />
+      <ErrorDialogHost />
+    </>
+  );
 }

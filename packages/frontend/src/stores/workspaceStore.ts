@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as api from '@/lib/api';
+import { showError } from './errorStore';
 
 interface WorkspaceState {
   currentPath: string;
@@ -92,6 +93,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       const errorMsg = e.message || '打开工作区失败';
       set({ error: errorMsg });
       console.error('[Workspace] 打开工作区失败:', e);
+      showError('打开工作区失败', e, '打开工作区失败');
       return false;
     }
   },

@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Plus, Minus, ChevronRight, ChevronDown, EyeOff } from 'lucide-react';
+import { Plus, Minus, ChevronRight, ChevronDown, EyeOff, RotateCcw } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import { useEditorStore } from '@/stores/editorStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import * as api from '@/lib/api';
+import { showError } from '@/stores/errorStore';
 
 const STATUS_COLORS: Record<string, string> = {
   modified: 'text-yellow',
@@ -22,7 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export default function GitFileList() {
-  const { files, stageFiles, unstageFiles, fetchStatus } = useGitStore();
+  const { files, stageFiles, unstageFiles, discardFiles, fetchStatus } = useGitStore();
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number; filePath: string } | null>(null);
   const ctxRef = useRef<HTMLDivElement>(null);
 
@@ -43,6 +44,16 @@ export default function GitFileList() {
     e.preventDefault();
     setCtxMenu({ x: e.clientX, y: e.clientY, filePath });
   }, []);
+
+  const handleDiscard = useCallback(async (filePath: string) => {
+    if (!confirm(`确定放弃 ${filePath} 的更改吗？`)) return;
+    try {
+      await discardFiles([filePath]);
+      setCtxMenu(null);
+    } catch (error) {
+      showError('Git 放弃更改失败', error, '放弃更改失败');
+    }
+  }, [discardFiles]);
 
   const addToGitignore = useCallback(async (filePath: string) => {
     const root = useWorkspaceStore.getState().currentPath;
@@ -71,6 +82,7 @@ export default function GitFileList() {
           files={staged}
           action="unstage"
           onAction={(path) => unstageFiles([path])}
+          onDiscard={handleDiscard}
           staged
           defaultOpen
           onContextMenu={handleContextMenu}
@@ -83,6 +95,7 @@ export default function GitFileList() {
           files={unstaged}
           action="stage"
           onAction={(path) => stageFiles([path])}
+          onDiscard={handleDiscard}
           staged={false}
           defaultOpen
           onContextMenu={handleContextMenu}
@@ -108,6 +121,13 @@ export default function GitFileList() {
             <EyeOff size={14} />
             添加到 .gitignore
           </button>
+          <button
+            className="flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left text-red hover:bg-red/10 transition-colors"
+            onClick={() => handleDiscard(ctxMenu.filePath)}
+          >
+            <RotateCcw size={14} />
+            放弃更改
+          </button>
         </div>
       )}
     </div>
@@ -120,6 +140,7 @@ function FileSection({
   files,
   action,
   onAction,
+  onDiscard,
   staged,
   defaultOpen = true,
   onContextMenu,
@@ -129,6 +150,7 @@ function FileSection({
   files: { path: string; status: string }[];
   action: 'stage' | 'unstage';
   onAction: (path: string) => void;
+  onDiscard: (path: string) => void;
   staged: boolean;
   defaultOpen?: boolean;
   onContextMenu: (e: React.MouseEvent, filePath: string) => void;
@@ -156,6 +178,7 @@ function FileSection({
             status={f.status}
             action={action}
             onAction={onAction}
+            onDiscard={onDiscard}
             staged={staged}
             onContextMenu={onContextMenu}
           />
@@ -169,6 +192,7 @@ function GitFileRow({
   status,
   action,
   onAction,
+  onDiscard,
   staged,
   onContextMenu,
 }: {
@@ -176,6 +200,7 @@ function GitFileRow({
   status: string;
   action: 'stage' | 'unstage';
   onAction: (path: string) => void;
+  onDiscard: (path: string) => void;
   staged: boolean;
   onContextMenu: (e: React.MouseEvent, filePath: string) => void;
 }) {
@@ -211,6 +236,13 @@ function GitFileRow({
           ) : (
             <Minus size={14} className="text-red" />
           )}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDiscard(filePath); }}
+          className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-red/10 transition-opacity"
+          title="放弃更改"
+        >
+          <RotateCcw size={14} className="text-red" />
         </button>
         <span className={`font-mono w-4 text-right ${color}`}>{label}</span>
       </div>

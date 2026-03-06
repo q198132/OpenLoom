@@ -32,6 +32,8 @@ pub fn run() {
             commands::git::git_status,
             commands::git::git_stage,
             commands::git::git_unstage,
+            commands::git::git_discard_paths,
+            commands::git::git_discard_all,
             commands::git::git_commit,
             commands::git::git_branches,
             commands::git::git_log,

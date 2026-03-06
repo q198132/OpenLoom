@@ -1,4 +1,5 @@
 use std::process::Command;
+use std::path::Path;
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 use tauri::State;
@@ -37,6 +38,52 @@ fn git_raw(args: &[&str], cwd: &str) -> Result<String, String> {
         return Err(stderr);
     }
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+fn path_exists(cwd: &str, path: &str) -> bool {
+    Path::new(cwd).join(path).exists()
+}
+
+fn discard_git_paths(cwd: &str, paths: &[String]) -> Result<(), String> {
+    if paths.is_empty() {
+        return Ok(());
+    }
+
+    let mut tracked_paths: Vec<&str> = Vec::new();
+    let mut untracked_paths: Vec<&str> = Vec::new();
+
+    for path in paths {
+        if git_cmd(&["ls-files", "--error-unmatch", "--", path], cwd)
+            .output()
+            .map_err(|e| e.to_string())?
+            .status
+            .success()
+        {
+            tracked_paths.push(path.as_str());
+        } else {
+            untracked_paths.push(path.as_str());
+        }
+    }
+
+    if !tracked_paths.is_empty() {
+        let mut args = vec!["restore", "--staged", "--worktree", "--source=HEAD", "--"];
+        args.extend(tracked_paths.iter().copied());
+        git(&args, cwd)?;
+    }
+
+    if !untracked_paths.is_empty() {
+        let mut clean_args = vec!["clean", "-fd", "--"];
+        clean_args.extend(untracked_paths.iter().copied());
+        git(&clean_args, cwd)?;
+    }
+
+    Ok(())
+}
+
+fn discard_all_git_changes(cwd: &str) -> Result<(), String> {
+    git(&["restore", "--staged", "--worktree", "."], cwd)?;
+    git(&["clean", "-fd"], cwd)?;
+    Ok(())
 }
 
 #[tauri::command]
@@ -87,6 +134,20 @@ pub async fn git_unstage(state: State<'_, AppState>, paths: Vec<String>) -> Resu
     let path_refs: Vec<&str> = paths.iter().map(|s| s.as_str()).collect();
     args.extend(path_refs);
     git(&args, &cwd)?;
+    Ok(serde_json::json!({ "ok": true }))
+}
+
+#[tauri::command]
+pub async fn git_discard_paths(state: State<'_, AppState>, paths: Vec<String>) -> Result<serde_json::Value, String> {
+    let cwd = state.get_root().to_string_lossy().to_string();
+    discard_git_paths(&cwd, &paths)?;
+    Ok(serde_json::json!({ "ok": true }))
+}
+
+#[tauri::command]
+pub async fn git_discard_all(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+    let cwd = state.get_root().to_string_lossy().to_string();
+    discard_all_git_changes(&cwd)?;
     Ok(serde_json::json!({ "ok": true }))
 }
 
@@ -287,4 +348,81 @@ pub async fn git_working_diff(
         "newContent": new_content,
         "file": file,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use tempfile::tempdir;
+
+    fn run_git(args: &[&str], cwd: &str) {
+        git(args, cwd).unwrap();
+    }
+
+    fn init_repo() -> (tempfile::TempDir, String) {
+        let dir = tempdir().unwrap();
+        let cwd = dir.path().to_string_lossy().to_string();
+        run_git(&["init"], &cwd);
+        run_git(&["config", "user.email", "test@example.com"], &cwd);
+        run_git(&["config", "user.name", "Tester"], &cwd);
+        (dir, cwd)
+    }
+
+    #[test]
+    fn discard_tracked_and_staged_file_restores_head_content() {
+        let (_dir, cwd) = init_repo();
+        fs::write(Path::new(&cwd).join("a.txt"), "v1").unwrap();
+        run_git(&["add", "a.txt"], &cwd);
+        run_git(&["commit", "-m", "init"], &cwd);
+
+        fs::write(Path::new(&cwd).join("a.txt"), "v2").unwrap();
+        run_git(&["add", "a.txt"], &cwd);
+
+        discard_git_paths(&cwd, &["a.txt".to_string()]).unwrap();
+
+        let content = fs::read_to_string(Path::new(&cwd).join("a.txt")).unwrap();
+        assert_eq!(content, "v1");
+
+        let status = git_raw(&["status", "--porcelain=v1"], &cwd).unwrap();
+        assert!(status.trim().is_empty());
+    }
+
+    #[test]
+    fn discard_untracked_file_and_dir_removes_them() {
+        let (_dir, cwd) = init_repo();
+        fs::write(Path::new(&cwd).join("tracked.txt"), "base").unwrap();
+        run_git(&["add", "tracked.txt"], &cwd);
+        run_git(&["commit", "-m", "init"], &cwd);
+
+        fs::write(Path::new(&cwd).join("new.txt"), "temp").unwrap();
+        fs::create_dir_all(Path::new(&cwd).join("temp-dir")).unwrap();
+        fs::write(Path::new(&cwd).join("temp-dir").join("x.txt"), "temp").unwrap();
+
+        discard_git_paths(&cwd, &["new.txt".to_string(), "temp-dir".to_string()]).unwrap();
+
+        assert!(!path_exists(&cwd, "new.txt"));
+        assert!(!path_exists(&cwd, "temp-dir"));
+    }
+
+    #[test]
+    fn discard_all_clears_tracked_and_untracked_changes() {
+        let (_dir, cwd) = init_repo();
+        fs::write(Path::new(&cwd).join("a.txt"), "v1").unwrap();
+        run_git(&["add", "a.txt"], &cwd);
+        run_git(&["commit", "-m", "init"], &cwd);
+
+        fs::write(Path::new(&cwd).join("a.txt"), "v2").unwrap();
+        run_git(&["add", "a.txt"], &cwd);
+        fs::write(Path::new(&cwd).join("b.txt"), "temp").unwrap();
+
+        discard_all_git_changes(&cwd).unwrap();
+
+        let content = fs::read_to_string(Path::new(&cwd).join("a.txt")).unwrap();
+        assert_eq!(content, "v1");
+        assert!(!path_exists(&cwd, "b.txt"));
+
+        let status = git_raw(&["status", "--porcelain=v1"], &cwd).unwrap();
+        assert!(status.trim().is_empty());
+    }
 }

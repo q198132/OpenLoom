@@ -3,6 +3,7 @@ import { Sparkles, Loader2, RefreshCw } from 'lucide-react';
 import { useGitStore } from '@/stores/gitStore';
 import { useConfigStore, matchShortcut } from '@/stores/configStore';
 import * as api from '@/lib/api';
+import { showError } from '@/stores/errorStore';
 
 export default function GitCommitBox() {
   const files = useGitStore((s) => s.files);
@@ -61,6 +62,7 @@ export default function GitCommitBox() {
         if (message) { useGitStore.getState().setCommitMessage(message); setGenerating(false); return; }
       } catch (err: any) {
         console.error('AI 生成失败:', err);
+        showError('AI 生成提交信息失败', err, 'AI 生成提交信息失败，已自动使用规则生成');
         // AI 不可用，走 fallback
       }
 
@@ -69,6 +71,7 @@ export default function GitCommitBox() {
       useGitStore.getState().setCommitMessage(msg);
     } catch (err) {
       console.error('生成提交信息失败:', err);
+      showError('生成提交信息失败', err, '生成提交信息失败');
     }
     setGenerating(false);
   }, []);
