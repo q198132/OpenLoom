@@ -82,9 +82,10 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const theme = useLayoutStore((s) => s.theme);
   const terminalFontSize = useConfigStore((s) => s.config.terminalFontSize);
 
-  // 全局拖拽检测：window 级别监听，避免 xterm canvas 拦截事件
+  // 全局拖拽检测：同时监听 DOM 事件（应用内拖拽）和 Tauri v2 原生事件（系统文件管理器拖拽）
   useEffect(() => {
     let counter = 0;
+    // DOM 拖拽事件（应用内，如文件树拖拽）
     const onDragEnter = () => { counter++; setDragging(true); };
     const onDragLeave = () => { counter--; if (counter <= 0) { counter = 0; setDragging(false); } };
     const onDrop = () => { counter = 0; setDragging(false); };
@@ -93,11 +94,23 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     window.addEventListener('dragleave', onDragLeave);
     window.addEventListener('drop', onDrop);
     window.addEventListener('dragend', onDragEnd);
+
+    // Tauri v2 原生拖拽事件（系统文件管理器拖入）
+    let unlistenEnter: (() => void) | null = null;
+    let unlistenLeave: (() => void) | null = null;
+    let unlistenDrop: (() => void) | null = null;
+    listen('tauri://drag-enter', () => { setDragging(true); }).then((fn) => { unlistenEnter = fn; });
+    listen('tauri://drag-leave', () => { setDragging(false); }).then((fn) => { unlistenLeave = fn; });
+    listen('tauri://drag-drop', () => { setDragging(false); }).then((fn) => { unlistenDrop = fn; });
+
     return () => {
       window.removeEventListener('dragenter', onDragEnter);
       window.removeEventListener('dragleave', onDragLeave);
       window.removeEventListener('drop', onDrop);
       window.removeEventListener('dragend', onDragEnd);
+      unlistenEnter?.();
+      unlistenLeave?.();
+      unlistenDrop?.();
     };
   }, []);
 
@@ -367,12 +380,13 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   }, [visible]);
 
   // 监听 Tauri 原生文件拖放事件（支持文件和文件夹路径）
+  // Tauri v2 事件名：tauri://drag-drop，payload 为 DragDropEvent { type: 'drop', paths: string[], position: ... }
   useEffect(() => {
     let unlisten: (() => void) | null = null;
-    listen<string[]>('tauri://file-drop', (event) => {
-      if (visible && event.payload.length > 0) {
+    listen<{ type: string; paths: string[] }>('tauri://drag-drop', (event) => {
+      if (visible && event.payload.type === 'drop' && event.payload.paths.length > 0) {
         setDragging(false);
-        const paths = event.payload.map(p => p.includes(' ') ? `"${p}"` : p).join(' ');
+        const paths = event.payload.paths.map(p => p.includes(' ') ? `"${p}"` : p).join(' ');
         api.ptyWrite(id, paths).catch(() => {});
       }
     }).then((fn) => { unlisten = fn; });
