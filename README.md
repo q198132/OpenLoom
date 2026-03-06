@@ -120,13 +120,19 @@ OpenLoom 的核心。基于 **Monaco Editor**——与 VS Code 同款引擎。
 真正的终端，通过 Rust `portable-pty` 提供完整 PTY 支持。
 
 - **多终端标签页** — 同时运行多个终端实例，自由切换
+- **Shell 类型选择** — 新建终端时可选择 PowerShell 或 CMD，记住偏好自动使用
 - 基于 Tauri 事件的实时通信
 - xterm.js + WebGL 渲染
 - 自动适配面板大小
 - 链接检测，可点击 URL
-- **文件拖拽到终端** — 从文件树拖拽文件到终端，自动粘贴文件路径
+- **文件拖拽到终端** — 从文件树或系统文件管理器拖拽文件，自动粘贴路径
+- **文件拖拽到文件夹** — 支持将文件拖拽到文件树中的文件夹，快速移动文件
+
+![Shell 类型选择](docs/screenshots/shell-selector.png)
 
 ![文件拖拽到终端](docs/screenshots/terminal-drag-drop.png)
+
+![文件拖拽到文件夹](docs/screenshots/file-drag-drop.png)
 
 ### Git 集成
 
