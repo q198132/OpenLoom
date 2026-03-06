@@ -6,6 +6,11 @@ import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useSSHStore } from '@/stores/sshStore';
 import InlineInput from './InlineInput';
 
+// 模块级变量：存储当前正在拖拽的文件树节点路径
+// 避免依赖 dataTransfer（dragDropEnabled:true 时 Tauri 会拦截 DOM drop 事件导致 dataTransfer 失效）
+export let dragSourcePath: string | null = null;
+export const setDragSourcePath = (p: string | null) => { dragSourcePath = p; };
+
 /** 文件类型图标配置：label 显示文字，color 颜色 class */
 const FILE_ICON_MAP: Record<string, { label: string; color: string }> = {
   // TypeScript / JavaScript
@@ -198,7 +203,9 @@ export default function FileTreeItem({
     e.preventDefault();
     setIsDragOver(false);
 
-    const sourcePath = e.dataTransfer.getData('text/plain');
+    // 优先读模块级变量（dragDropEnabled:true 时 dataTransfer 可能被 Tauri 拦截）
+    const sourcePath = dragSourcePath || e.dataTransfer.getData('text/plain');
+    setDragSourcePath(null);
     if (!sourcePath) return;
 
     // 获取源文件名
@@ -261,6 +268,7 @@ export default function FileTreeItem({
             const root = useWorkspaceStore.getState().currentPath;
             path = root ? `${root}/${node.path}` : node.path;
           }
+          setDragSourcePath(path);
           e.dataTransfer.setData('text/plain', path);
           e.dataTransfer.effectAllowed = 'move';
         }}

@@ -9,6 +9,8 @@ import * as api from '@/lib/api';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useConfigStore } from '@/stores/configStore';
+import { dragSourcePath, setDragSourcePath } from '@/components/filetree/FileTreeItem';
+
 
 const DARK_THEME = {
   background: '#11111b',
@@ -401,12 +403,13 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const handleOverlayDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    // 应用内部拖拽（文件树）通过 web dataTransfer 传递路径
-    const filePath = e.dataTransfer.getData('text/plain');
+    // 优先读模块级变量（dragDropEnabled:true 时 dataTransfer 可能被 Tauri 拦截）
+    const filePath = dragSourcePath || e.dataTransfer.getData('text/plain');
+    setDragSourcePath(null);
     if (filePath) {
       api.ptyWrite(id, filePath).catch(() => {});
     }
-    // 系统文件管理器拖入的文件/文件夹由 tauri://file-drop 事件处理
+    // 系统文件管理器拖入由 tauri://drag-drop 事件处理
   };
 
   return (
