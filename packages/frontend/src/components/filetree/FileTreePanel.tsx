@@ -6,10 +6,13 @@ import * as api from '@/lib/api';
 import { useGitStore } from '@/stores/gitStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { useControlSocket } from '@/hooks/useWebSocket';
-import FileTreeItem from './FileTreeItem';
+import FileTreeItem, { dragSource, setDragSource } from './FileTreeItem';
 import ContextMenu from './ContextMenu';
 import InlineInput from './InlineInput';
 import type { FileNode, ControlMessage } from '@openloom/shared';
+import { showError } from '@/stores/errorStore';
+
+const TREE_PATH_MIME = 'application/x-openloom-tree-path';
 
 function getRootDeletedPlaceholderNodes(
   files: { path: string; status: string; staged: boolean }[],
@@ -226,6 +229,63 @@ export default function FileTreePanel() {
     clearEdit();
   };
 
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    const types = Array.from(e.dataTransfer.types || []);
+    if (types.includes(TREE_PATH_MIME)) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const sourcePath = dragSource?.treePath || e.dataTransfer.getData(TREE_PATH_MIME);
+    setDragSource(null);
+    if (!sourcePath) return;
+
+    // 获取源文件名
+    const sourceName = sourcePath.split('/').pop() || sourcePath.split('\\').pop();
+    if (!sourceName) return;
+
+    // 目标路径就是根目录下的文件名
+    let targetPath: string;
+    if (isRemote) {
+      targetPath = sshWorkingDir ? (sshWorkingDir.endsWith('/') ? sshWorkingDir + sourceName : sshWorkingDir + '/' + sourceName) : sourceName;
+    } else {
+      targetPath = sourceName;
+    }
+
+    // 检查是否已经在根目录
+    if (sourcePath === targetPath || (!isRemote && !sourcePath.includes('/'))) return;
+
+    try {
+      await renameNode(sourcePath, targetPath);
+      window.dispatchEvent(new CustomEvent('file-tree-refresh'));
+    } catch (error: any) {
+      console.error('[FileTree] Move failed:', error);
+      showError('文件移动失败', error, '移动失败');
+    }
+  };
+
   const deletedGitFiles = gitFiles.filter((file) => file.status === 'deleted');
   const liveGitFiles = gitFiles.filter((file) => file.status !== 'deleted');
   const rootDeletedNodes = getRootDeletedPlaceholderNodes(gitFiles, nodes);
@@ -337,8 +397,12 @@ export default function FileTreePanel() {
         </div>
       </div>
       <div
-        className="flex-1 overflow-y-auto py-1.5 px-1"
+        className={`flex-1 overflow-y-auto py-1.5 px-1 transition-colors ${isDragOver ? 'bg-accent/5' : ''}`}
         onContextMenu={handleBlankContextMenu}
+        onDragOver={handleDragOver}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
       >
         {loading && nodes.length === 0 ? (
           <div className="flex items-center justify-center h-full text-sm text-overlay0">

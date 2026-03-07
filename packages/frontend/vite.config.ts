@@ -10,6 +10,11 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src'),
     },
   },
+  optimizeDeps: {
+    // Monaco 的 worker 在 dep optimizer 下偶尔会生成缺失的 json.worker.js
+    // 直接排除，让它走正常打包流程，避免 dev 起不来
+    exclude: ['monaco-editor', '@monaco-editor/react'],
+  },
   server: {
     port: 5173,
   },

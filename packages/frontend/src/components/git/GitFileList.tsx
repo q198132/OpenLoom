@@ -259,14 +259,41 @@ function FileIcon({ fileName }: { fileName: string }) {
     case 'ts': case 'tsx': color = 'text-blue'; text = 'TS'; break;
     case 'js': case 'jsx': color = 'text-yellow'; text = 'JS'; break;
     case 'json': color = 'text-yellow'; text = '{}'; break;
-    case 'css': color = 'text-blue'; text = '#'; break;
-    case 'html': color = 'text-red'; text = '<>'; break;
-    case 'md': color = 'text-subtext0'; text = 'M'; break;
-    default: text = '·'; break;
+    case 'css': case 'scss': case 'less': color = 'text-blue'; text = '#'; break;
+    case 'html': case 'xml': color = 'text-red'; text = '<>'; break;
+    case 'md': color = 'text-blue'; text = 'MD'; break;
+    case 'py': color = 'text-blue'; text = 'PY'; break;
+    case 'rs': color = 'text-peach'; text = 'RS'; break;
+    case 'sh': case 'bash': case 'ps1': case 'bat': color = 'text-green'; text = 'SH'; break;
+    case 'png': case 'jpg': case 'jpeg': case 'gif': case 'svg': case 'ico': case 'webp': color = 'text-mauve'; text = 'IMG'; break;
+    case 'zip': case 'gz': case 'tar': case 'rar': color = 'text-peach'; text = 'ZIP'; break;
+    case 'mp4': case 'webm': case 'mkv': case 'avi': color = 'text-mauve'; text = 'VID'; break;
+    case 'mp3': case 'wav': case 'ogg': case 'flac': color = 'text-mauve'; text = 'AUD'; break;
+    case 'lock': color = 'text-subtext0'; text = 'LCK'; break;
+    case 'env': color = 'text-yellow'; text = 'ENV'; break;
+    case 'txt': color = 'text-subtext0'; text = 'TXT'; break;
+    case 'gitignore': color = 'text-peach'; text = 'GIT'; break;
+    case 'pdf': color = 'text-red'; text = 'PDF'; break;
+    default: color = 'text-subtext0'; text = 'DOC'; break;
+  }
+
+  // 特殊文件处理
+  if (fileName === 'package.json' || fileName === 'package-lock.json') {
+    color = 'text-green';
+    text = 'NPM';
+  } else if (fileName === 'Cargo.toml' || fileName === 'Cargo.lock') {
+    color = 'text-peach';
+    text = 'CGO';
+  } else if (fileName === 'Dockerfile') {
+    color = 'text-blue';
+    text = 'DKR';
+  } else if (fileName === 'LICENSE') {
+    color = 'text-subtext0';
+    text = 'LIC';
   }
 
   return (
-    <span className={`${color} font-mono text-[10px] w-4 text-center shrink-0 leading-none`}>
+    <span className={`${color} font-mono text-[10px] w-6 text-center shrink-0 leading-none`}>
       {text}
     </span>
   );

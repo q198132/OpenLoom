@@ -44,7 +44,7 @@ export default function SidebarContainer() {
   const isConnected = sshSession?.status === 'connected';
 
   return (
-    <div className="h-full flex">
+    <div className="h-full flex" data-sidebar-container>
       {/* 图标栏 */}
       <div className="w-10 bg-crust flex flex-col items-center pt-2 gap-1 border-r border-surface0">
         <SidebarIcon

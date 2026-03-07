@@ -9,7 +9,7 @@ import * as api from '@/lib/api';
 import { useTerminalStore } from '@/stores/terminalStore';
 import { useLayoutStore } from '@/stores/layoutStore';
 import { useConfigStore } from '@/stores/configStore';
-import { dragSource, setDragSource } from '@/components/filetree/FileTreeItem';
+import { dragSourcePath, setDragSourcePath } from '@/components/filetree/FileTreeItem';
 
 
 const DARK_THEME = {
@@ -65,6 +65,8 @@ interface TerminalInstanceProps {
 
 const WINDOWS_ABS_PATH_REGEX = /[A-Za-z]:\\[^\s<>:"|?*]+(?:\\[^\s<>:"|?*]+)*/g;
 const POSIX_PATH_REGEX = /(?:\.\.?\/|\/)[^\s"'`<>|]+/g;
+// FileTree 拖拽时使用的自定义 MIME 类型
+const TREE_PATH_MIME = 'application/x-openloom-tree-path';
 
 function normalizeTerminalPath(raw: string): string {
   let p = raw.trim().replace(/[),.;:!?]+$/, '');
@@ -83,27 +85,6 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
   const setConnected = useTerminalStore((s) => s.setConnected);
   const theme = useLayoutStore((s) => s.theme);
   const terminalFontSize = useConfigStore((s) => s.config.terminalFontSize);
-
-  // 全局拖拽检测：同时监听 DOM 事件（应用内拖拽）和 Tauri v2 原生事件（系统文件管理器拖拽）
-  useEffect(() => {
-    let counter = 0;
-    // DOM 拖拽事件（应用内，如文件树拖拽）
-    const onDragEnter = () => { counter++; setDragging(true); };
-    const onDragLeave = () => { counter--; if (counter <= 0) { counter = 0; setDragging(false); } };
-    const onDrop = () => { counter = 0; setDragging(false); };
-    const onDragEnd = () => { counter = 0; setDragging(false); };
-    window.addEventListener('dragenter', onDragEnter);
-    window.addEventListener('dragleave', onDragLeave);
-    window.addEventListener('drop', onDrop);
-    window.addEventListener('dragend', onDragEnd);
-
-    return () => {
-      window.removeEventListener('dragenter', onDragEnter);
-      window.removeEventListener('dragleave', onDragLeave);
-      window.removeEventListener('drop', onDrop);
-      window.removeEventListener('dragend', onDragEnd);
-    };
-  }, []);
 
   // 初始化 xterm 实例并连接 PTY
   useEffect(() => {
@@ -377,7 +358,6 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
 
     const writePaths = (paths: string[]) => {
       if (visible && paths.length > 0) {
-        setDragging(false);
         const text = paths.map((p) => p.includes(' ') ? `"${p}"` : p).join(' ');
         api.ptyWrite(id, text).catch(() => {});
       }
@@ -399,20 +379,50 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
     };
   }, [id, visible]);
 
+  // 本地拖拽进入/离开终端区域时，开启/关闭覆盖层
+  const handleTerminalDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    const types = Array.from(e.dataTransfer.types || []);
+    console.log('[Terminal] dragEnter', { types, dragSourcePath });
+    // 允许文件树内部拖拽或系统文件拖拽时触发覆盖层（系统文件通常有 Files type）
+    if (!types.includes(TREE_PATH_MIME) && !types.includes('Files')) return;
+    setDragging(true);
+  };
+
+  const handleTerminalDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    // 只有鼠标真的离开了终端容器才隐藏，避免由于内部元素触发 leave
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragging(false);
+    }
+  };
+
   const handleOverlayDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
+    const types = Array.from(e.dataTransfer.types || []);
+    if (types.includes(TREE_PATH_MIME) || types.includes('Files')) {
+      e.dataTransfer.dropEffect = 'copy';
+    }
   };
 
   const handleOverlayDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    const filePath = dragSource?.terminalPath || e.dataTransfer.getData('text/plain');
-    setDragSource(null);
-    if (filePath) {
+    
+    const types = Array.from(e.dataTransfer.types || []);
+    
+    // 如果是从文件树开始的拖拽
+    if (types.includes(TREE_PATH_MIME) && dragSourcePath) {
+      const filePath = dragSourcePath;
+      setDragSourcePath(null);
+      console.log('[Terminal] overlayDrop writePath', filePath);
       api.ptyWrite(id, filePath).catch(() => {});
-    }
-    // 系统文件管理器拖入由 Tauri 文件拖放事件处理
+    } 
+    // 系统文件管理器拖入由 tauri://file-drop / tauri://drag-drop 事件在后台自动处理
+    // 但是前端还是需要去掉 dragging 状态
   };
 
   return (
@@ -422,15 +432,15 @@ export default function TerminalInstance({ id, visible }: TerminalInstanceProps)
         visibility: visible ? 'visible' : 'hidden',
         zIndex: visible ? 1 : 0
       }}
+      onDragEnter={handleTerminalDragEnter}
+      onDragLeave={handleTerminalDragLeave}
+      onDragOver={handleOverlayDragOver}
+      onDrop={handleOverlayDrop}
     >
       <div ref={containerRef} className="h-full w-full" />
       {dragging && visible && (
-        <div
-          className="absolute inset-0 z-50 bg-accent/10 border-2 border-dashed border-accent flex items-center justify-center"
-          onDragOver={handleOverlayDragOver}
-          onDrop={handleOverlayDrop}
-        >
-          <span className="text-accent text-sm font-medium">释放以粘贴文件路径</span>
+        <div className="absolute inset-0 z-50 bg-accent/10 border-2 border-dashed border-accent flex items-center justify-center pointer-events-none">
+          <span className="text-accent text-sm font-medium bg-mantle/80 px-4 py-2 rounded-lg shadow-md backdrop-blur-sm">释放以粘贴文件路径</span>
         </div>
       )}
     </div>

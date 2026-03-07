@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   ChevronRight,
   ChevronDown,
@@ -24,6 +24,8 @@ import InlineInput from './InlineInput';
 import { showError } from '@/stores/errorStore';
 
 // 模块级变量：存储当前正在拖拽的文件树节点信息
+// 兼容终端拖拽：旧逻辑使用字符串 dragSourcePath，
+// 新逻辑在此基础上增加 DragSource 对象（用于文件树内部移动等）。
 export interface DragSource {
   treePath: string;
   terminalPath: string;
@@ -32,6 +34,9 @@ export interface DragSource {
 
 export let dragSource: DragSource | null = null;
 export const setDragSource = (value: DragSource | null) => { dragSource = value; };
+
+export let dragSourcePath: string | null = null;
+export const setDragSourcePath = (p: string | null) => { dragSourcePath = p; };
 
 const TREE_PATH_MIME = 'application/x-openloom-tree-path';
 
@@ -168,6 +173,7 @@ export default function FileTreeItem({
   const [children, setChildren] = useState<FileNode[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  const dragCounter = useRef(0);
 
   const isExpanded = expandedPaths.has(node.path);
   const isSelected = selectedPath === node.path;
@@ -258,32 +264,43 @@ export default function FileTreeItem({
 
   // 拖拽处理
   const handleDragOver = (e: React.DragEvent) => {
-    if (!node.isDirectory) return;
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
   };
 
   const handleDragEnter = (e: React.DragEvent) => {
-    if (!node.isDirectory) return;
     e.preventDefault();
-    setIsDragOver(true);
+    e.stopPropagation();
+    
+    const types = Array.from(e.dataTransfer.types || []);
+    // 只有我们自定义的类型才可以拖拽高亮，防止其他拖拽（比如文本）意外触发
+    if (types.includes(TREE_PATH_MIME)) {
+      dragCounter.current += 1;
+      if (dragCounter.current === 1) {
+        setIsDragOver(true);
+      }
+    }
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    if (!node.isDirectory) return;
     e.preventDefault();
-    // 只有真正离开元素时才取消高亮
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX;
-    const y = e.clientY;
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setIsDragOver(false);
+    e.stopPropagation();
+    
+    const types = Array.from(e.dataTransfer.types || []);
+    if (types.includes(TREE_PATH_MIME)) {
+      dragCounter.current -= 1;
+      if (dragCounter.current <= 0) {
+        dragCounter.current = 0;
+        setIsDragOver(false);
+      }
     }
   };
 
   const handleDrop = async (e: React.DragEvent) => {
-    if (!node.isDirectory) return;
     e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
     setIsDragOver(false);
 
     const sourcePath = dragSource?.treePath || e.dataTransfer.getData(TREE_PATH_MIME);
@@ -295,25 +312,32 @@ export default function FileTreeItem({
     const sourceName = sourcePath.split('/').pop() || sourcePath.split('\\').pop();
     if (!sourceName) return;
 
-    // 构造目标路径
+    // 构造目标路径：如果是文件夹则移入该文件夹，如果是文件则移入它所在的父文件夹
     const isRemote = useFileTreeStore.getState().isRemote;
     let targetPath: string;
     
+    // 如果拖拽到文件上，我们要把目标设为它的父目录
+    const parentNodePath = node.isDirectory ? node.path : (node.path.substring(0, node.path.lastIndexOf('/')) || '');
+
     if (isRemote) {
-      // 远程模式：node.path 已经是绝对路径
-      targetPath = node.path.endsWith('/') 
-        ? node.path + sourceName 
-        : node.path + '/' + sourceName;
+      // 远程模式：parentNodePath 已经是绝对路径
+      if (!parentNodePath) {
+        targetPath = sourceName;
+      } else {
+        targetPath = parentNodePath.endsWith('/') 
+          ? parentNodePath + sourceName 
+          : parentNodePath + '/' + sourceName;
+      }
     } else {
-      // 本地模式：node.path 是相对路径
-      targetPath = node.path ? node.path + '/' + sourceName : sourceName;
+      // 本地模式：parentNodePath 是相对路径
+      targetPath = parentNodePath ? parentNodePath + '/' + sourceName : sourceName;
     }
 
-    // 检查是否拖到自己身上
+    // 检查是否拖到自己身上，或者移动到当前所在目录（即路径未改变）
     if (sourcePath === targetPath) return;
 
     // 检查是否把目录拖入自身或其子目录
-    if (sourceIsDirectory && (node.path === sourcePath || node.path.startsWith(`${sourcePath}/`))) {
+    if (sourceIsDirectory && (parentNodePath === sourcePath || parentNodePath.startsWith(`${sourcePath}/`))) {
       showError('文件移动失败', '不能将文件夹移动到自身或其子文件夹', '不能将文件夹移动到自身或其子文件夹');
       return;
     }
@@ -328,12 +352,48 @@ export default function FileTreeItem({
     }
   };
 
+  // 文件树 → 终端 / 文件树内部拖拽的统一拖拽源，仅绑在“图标”上，避免整行轻微移动就进入拖拽态
+  const handleDragStart = (e: React.DragEvent) => {
+    // SSH 模式：node.path 已经是远程绝对路径
+    // 本地模式：需要拼接工作区路径
+    const isRemote = useFileTreeStore.getState().isRemote;
+    let path: string;
+    if (isRemote) {
+      path = node.path;
+    } else {
+      const root = useWorkspaceStore.getState().currentPath;
+      path = root ? `${root}/${node.path}` : node.path;
+    }
+
+    const withAlt = e.altKey;
+    console.log('[FileTree] dragStart', { treePath: node.path, terminalPath: path, alt: withAlt });
+
+    // 无论是否按 Alt，都允许文件树内部拖拽使用 dragSource
+    setDragSource({ treePath: node.path, terminalPath: path, isDirectory: node.isDirectory });
+
+    // 默认提供 MIME type，这样不仅支持拖拽到终端直接粘贴路径，还能跨应用拖拽路径
+    setDragSourcePath(path);
+    e.dataTransfer.setData(TREE_PATH_MIME, node.path);
+    e.dataTransfer.setData('text/plain', path);
+    // 允许复制或移动操作
+    e.dataTransfer.effectAllowed = 'copyMove';
+  };
+
+  const handleDragEnd = () => {
+    console.log('[FileTree] dragEnd');
+    setDragSource(null);
+    setDragSourcePath(null);
+  };
+
   return (
     <div>
       <div
+        draggable
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
         className={`group flex items-center h-7 cursor-pointer select-none rounded-lg mr-2 transition-all duration-150 ${
-          isSelected 
-            ? 'bg-[linear-gradient(90deg,rgba(137,180,250,0.16),rgba(137,180,250,0.05))] text-accent border-l-2 border-accent shadow-[inset_0_0_0_1px_rgba(137,180,250,0.18)]' 
+          isSelected
+            ? 'bg-[linear-gradient(90deg,rgba(137,180,250,0.16),rgba(137,180,250,0.05))] text-accent border-l-2 border-accent shadow-[inset_0_0_0_1px_rgba(137,180,250,0.18)]'
             : isDragOver
               ? 'bg-accent/20 text-accent border-l-2 border-accent'
               : isDeletedPlaceholder
@@ -341,24 +401,6 @@ export default function FileTreeItem({
                 : 'text-subtext1 hover:bg-[linear-gradient(90deg,rgba(49,50,68,0.9),rgba(49,50,68,0.32))] border-l-2 border-transparent'
         }`}
         style={{ paddingLeft: `${depth * 16 + 10}px` }}
-        draggable
-        onDragStart={(e) => {
-          // SSH 模式：node.path 已经是远程绝对路径
-          // 本地模式：需要拼接工作区路径
-          const isRemote = useFileTreeStore.getState().isRemote;
-          let path: string;
-          if (isRemote) {
-            path = node.path;  // 远程模式直接使用绝对路径
-          } else {
-            const root = useWorkspaceStore.getState().currentPath;
-            path = root ? `${root}/${node.path}` : node.path;
-          }
-          setDragSource({ treePath: node.path, terminalPath: path, isDirectory: node.isDirectory });
-          e.dataTransfer.setData(TREE_PATH_MIME, node.path);
-          e.dataTransfer.setData('text/plain', path);
-          e.dataTransfer.effectAllowed = 'copyMove';
-        }}
-        onDragEnd={() => setDragSource(null)}
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -373,11 +415,21 @@ export default function FileTreeItem({
             ) : (
               <ChevronRight size={14} className="shrink-0 mr-1 text-overlay0 group-hover:text-subtext0" />
             )}
-            {isExpanded ? (
-              <FolderOpen size={15} className={`shrink-0 mr-1.5 ${directoryStatusSummary[0]?.status === 'deleted' ? 'text-red' : directoryStatusSummary[0]?.status === 'modified' ? 'text-yellow' : directoryStatusSummary[0]?.status === 'added' || directoryStatusSummary[0]?.status === 'untracked' ? 'text-green' : directoryStatusSummary[0]?.status === 'renamed' ? 'text-blue' : 'text-accent'}`} />
-            ) : (
-              <Folder size={15} className={`shrink-0 mr-1.5 ${directoryStatusSummary[0]?.status === 'deleted' ? 'text-red' : directoryStatusSummary[0]?.status === 'modified' ? 'text-yellow' : directoryStatusSummary[0]?.status === 'added' || directoryStatusSummary[0]?.status === 'untracked' ? 'text-green' : directoryStatusSummary[0]?.status === 'renamed' ? 'text-blue' : 'text-accent'}`} />
-            )}
+            <span
+              className="shrink-0 mr-1.5"
+            >
+              {isExpanded ? (
+                <FolderOpen
+                  size={15}
+                  className={`${directoryStatusSummary[0]?.status === 'deleted' ? 'text-red' : directoryStatusSummary[0]?.status === 'modified' ? 'text-yellow' : directoryStatusSummary[0]?.status === 'added' || directoryStatusSummary[0]?.status === 'untracked' ? 'text-green' : directoryStatusSummary[0]?.status === 'renamed' ? 'text-blue' : 'text-accent'}`}
+                />
+              ) : (
+                <Folder
+                  size={15}
+                  className={`${directoryStatusSummary[0]?.status === 'deleted' ? 'text-red' : directoryStatusSummary[0]?.status === 'modified' ? 'text-yellow' : directoryStatusSummary[0]?.status === 'added' || directoryStatusSummary[0]?.status === 'untracked' ? 'text-green' : directoryStatusSummary[0]?.status === 'renamed' ? 'text-blue' : 'text-accent'}`}
+                />
+              )}
+            </span>
           </>
         ) : (
           <>
@@ -385,12 +437,27 @@ export default function FileTreeItem({
             {(() => {
               const iconInfo = getFileIcon(node.name);
               if (iconInfo.kind === 'document' || !iconInfo.icon) {
-                return <FileDocumentGlyph deleted={isDeletedPlaceholder} />;
+                return (
+                  <span
+                    className=""
+                  >
+                    <FileDocumentGlyph deleted={isDeletedPlaceholder} />
+                  </span>
+                );
               }
               const Icon = iconInfo.icon;
               return (
-                <span className={`shrink-0 mr-1.5 flex items-center justify-center w-[16px] h-[16px] rounded-[5px] bg-[linear-gradient(180deg,rgba(49,50,68,0.95),rgba(24,24,37,0.92))] ${iconInfo.tone ? `before:absolute before:inset-0 before:rounded-[5px] before:bg-[linear-gradient(135deg,var(--tw-gradient-stops))] before:${iconInfo.tone}` : ''} ${isDeletedPlaceholder ? 'ring-1 ring-red/25' : 'ring-1 ring-surface1/60'}`}>
-                  <Icon size={11.5} className={`${iconInfo.color} ${isDeletedPlaceholder ? 'opacity-80' : ''}`} />
+                <span
+                  className={`relative shrink-0 mr-1.5 flex items-center justify-center w-[16px] h-[16px] rounded-[5px] bg-[linear-gradient(180deg,rgba(49,50,68,0.95),rgba(24,24,37,0.92))] ${
+                    iconInfo.tone
+                      ? `before:absolute before:inset-0 before:rounded-[5px] before:bg-[linear-gradient(135deg,var(--tw-gradient-stops))] before:${iconInfo.tone}`
+                      : ''
+                  } ${isDeletedPlaceholder ? 'ring-1 ring-red/25' : 'ring-1 ring-surface1/60'}`}
+                >
+                  <Icon
+                    size={11.5}
+                    className={`${iconInfo.color} ${isDeletedPlaceholder ? 'opacity-80' : ''}`}
+                  />
                 </span>
               );
             })()}
