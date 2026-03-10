@@ -3,6 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Editor from '@monaco-editor/react';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useConfigStore } from '@/stores/configStore';
+import { attachEditorFontWheelZoom } from '@/lib/editorFont';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import { Eye, Code2 } from 'lucide-react';
 
@@ -15,6 +17,7 @@ interface Props {
 export default function MarkdownPreview({ content, language, onContentChange }: Props) {
   const [mode, setMode] = useState<'preview' | 'source'>('preview');
   const theme = useLayoutStore((s) => s.theme);
+  const editorFontSize = useConfigStore((s) => s.config.editorFontSize);
 
   return (
     <div className="h-full flex flex-col">
@@ -57,13 +60,16 @@ export default function MarkdownPreview({ content, language, onContentChange }: 
               monaco.editor.setTheme(
                 theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte',
               );
+
+              const detachWheelZoom = attachEditorFontWheelZoom(_editor);
+              _editor.onDidDispose(() => detachWheelZoom());
             }}
             onChange={(value) => {
               if (value !== undefined) onContentChange?.(value);
             }}
             options={{
               fontFamily: "'JetBrains Mono', monospace",
-              fontSize: 14,
+              fontSize: editorFontSize,
               minimap: { enabled: false },
               scrollBeyondLastLine: false,
               renderLineHighlight: 'line',

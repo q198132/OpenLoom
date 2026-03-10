@@ -1,6 +1,8 @@
 import { DiffEditor } from '@monaco-editor/react';
 import { useDiffReviewStore } from '@/stores/diffReviewStore';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useConfigStore } from '@/stores/configStore';
+import { attachEditorFontWheelZoom } from '@/lib/editorFont';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import { Check, X } from 'lucide-react';
 
@@ -8,6 +10,7 @@ export default function DiffReviewPanel() {
   const { pendingReviews, activeReviewPath, acceptReview, rejectReview } =
     useDiffReviewStore();
   const theme = useLayoutStore((s) => s.theme);
+  const editorFontSize = useConfigStore((s) => s.config.editorFontSize);
 
   const activeReview = pendingReviews.find(
     (r) => r.path === activeReviewPath,
@@ -62,10 +65,13 @@ export default function DiffReviewPanel() {
             monaco.editor.setTheme(
               theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte',
             );
+
+            const detachWheelZoom = attachEditorFontWheelZoom(_editor);
+            _editor.onDidDispose(() => detachWheelZoom());
           }}
           options={{
             fontFamily: "'JetBrains Mono', monospace",
-            fontSize: 14,
+            fontSize: editorFontSize,
             readOnly: true,
             renderSideBySide: true,
             scrollBeyondLastLine: false,

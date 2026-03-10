@@ -1,12 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { PanelLeftClose, PanelLeftOpen, Sun, Moon, FolderOpen, ChevronDown, Settings, Github } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
+import { useConfigStore } from '@/stores/configStore';
 import { useWorkspaceStore } from '@/stores/workspaceStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import WindowControls from './WindowControls';
 
 export default function TopBar() {
   const { sidebarVisible, toggleSidebar, theme, setTheme, toggleSettings } = useLayoutStore();
+  const editorFontSize = useConfigStore((s) => s.config.editorFontSize);
   const { projectName, currentPath, recentProjects, fetchWorkspace, fetchRecent, openFolder } = useWorkspaceStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -108,6 +110,12 @@ export default function TopBar() {
         </div>
       </div>
       <div className="flex items-center gap-1">
+        <div
+          className="px-2 py-1 rounded-md border border-surface0/80 bg-surface0/40 text-[11px] text-subtext0"
+          title="当前编辑区字号"
+        >
+          编辑区 {editorFontSize}px
+        </div>
         <a
           href="https://github.com/q198132/OpenLoom"
           target="_blank"

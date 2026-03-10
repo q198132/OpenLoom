@@ -7,6 +7,7 @@ import { useLayoutStore } from '@/stores/layoutStore';
 import { useConfigStore, matchShortcut } from '@/stores/configStore';
 import { useSSHStore } from '@/stores/sshStore';
 import * as api from '@/lib/api';
+import { attachEditorFontWheelZoom } from '@/lib/editorFont';
 import { catppuccinMocha, catppuccinLatte } from '@/themes/catppuccin';
 import TabBar from './TabBar';
 import DiffReviewBar from './DiffReviewBar';
@@ -21,6 +22,7 @@ export default function EditorPanel() {
     useEditorStore();
   const theme = useLayoutStore((s) => s.theme);
   const shortcuts = useConfigStore((s) => s.config.shortcuts);
+  const editorFontSize = useConfigStore((s) => s.config.editorFontSize);
   const pendingReviews = useDiffReviewStore((s) => s.pendingReviews);
   const showDiff = pendingReviews.length > 0;
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -104,6 +106,9 @@ export default function EditorPanel() {
     if (model) {
       monaco.editor.setModelMarkers(model, 'typescript', []);
     }
+
+    const detachWheelZoom = attachEditorFontWheelZoom(editor);
+    editor.onDidDispose(() => detachWheelZoom());
   };
 
   // 主题切换
@@ -160,10 +165,13 @@ export default function EditorPanel() {
                 monaco.editor.setTheme(
                   theme === 'dark' ? 'catppuccin-mocha' : 'catppuccin-latte',
                 );
+
+                const detachWheelZoom = attachEditorFontWheelZoom(_editor);
+                _editor.onDidDispose(() => detachWheelZoom());
               }}
               options={{
                 fontFamily: "'JetBrains Mono', monospace",
-                fontSize: 14,
+                fontSize: editorFontSize,
                 readOnly: true,
                 renderSideBySide: true,
                 scrollBeyondLastLine: false,
@@ -197,13 +205,13 @@ export default function EditorPanel() {
                     if (value !== undefined && activeTab) {
                       updateContent(activeTab, value);
                     }
-                  }}
-                  options={{
-                    fontFamily: "'JetBrains Mono', monospace",
-                    fontSize: 14,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    renderLineHighlight: 'all', // 高亮整行（包括右侧空白区域）
+                   }}
+                   options={{
+                     fontFamily: "'JetBrains Mono', monospace",
+                     fontSize: editorFontSize,
+                     minimap: { enabled: false },
+                     scrollBeyondLastLine: false,
+                     renderLineHighlight: 'all', // 高亮整行（包括右侧空白区域）
                     cursorBlinking: 'smooth',
                     smoothScrolling: true,
                     padding: { top: 8 },

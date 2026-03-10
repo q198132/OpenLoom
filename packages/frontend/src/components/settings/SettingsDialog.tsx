@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useLayoutStore } from '@/stores/layoutStore';
-import { useConfigStore } from '@/stores/configStore';
+import {
+  DEFAULT_EDITOR_FONT_SIZE,
+  DEFAULT_TERMINAL_FONT_SIZE,
+  EDITOR_FONT_SIZE_MAX,
+  EDITOR_FONT_SIZE_MIN,
+  TERMINAL_FONT_SIZE_MAX,
+  TERMINAL_FONT_SIZE_MIN,
+  useConfigStore,
+} from '@/stores/configStore';
 import type { AppConfig, Shortcuts, AiConfig } from '@/stores/configStore';
 import { showError } from '@/stores/errorStore';
 
@@ -151,8 +159,8 @@ function GeneralTab({
         <div className="flex items-center gap-2">
           <input
             type="range"
-            min={10}
-            max={24}
+            min={TERMINAL_FONT_SIZE_MIN}
+            max={TERMINAL_FONT_SIZE_MAX}
             value={form.terminalFontSize}
             onChange={(e) =>
               setForm({ ...form, terminalFontSize: Number(e.target.value) })
@@ -162,6 +170,37 @@ function GeneralTab({
           <span className="text-xs text-text w-6 text-right">
             {form.terminalFontSize}
           </span>
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, terminalFontSize: DEFAULT_TERMINAL_FONT_SIZE })}
+            className="px-2 py-1 text-[11px] rounded-md border border-surface0 text-subtext0 hover:text-text hover:border-accent transition-colors"
+          >
+            恢复默认
+          </button>
+        </div>
+      </Field>
+      <Field label="编辑区字体大小">
+        <div className="flex items-center gap-2">
+          <input
+            type="range"
+            min={EDITOR_FONT_SIZE_MIN}
+            max={EDITOR_FONT_SIZE_MAX}
+            value={form.editorFontSize}
+            onChange={(e) =>
+              setForm({ ...form, editorFontSize: Number(e.target.value) })
+            }
+            className="flex-1 accent-accent"
+          />
+          <span className="text-xs text-text w-6 text-right">
+            {form.editorFontSize}
+          </span>
+          <button
+            type="button"
+            onClick={() => setForm({ ...form, editorFontSize: DEFAULT_EDITOR_FONT_SIZE })}
+            className="px-2 py-1 text-[11px] rounded-md border border-surface0 text-subtext0 hover:text-text hover:border-accent transition-colors"
+          >
+            恢复默认
+          </button>
         </div>
       </Field>
     </>

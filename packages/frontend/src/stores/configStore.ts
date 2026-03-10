@@ -5,8 +5,28 @@ import { showError } from './errorStore';
 
 export type { Shortcuts, AiConfig };
 
+export const TERMINAL_FONT_SIZE_MIN = 10;
+export const TERMINAL_FONT_SIZE_MAX = 24;
+export const DEFAULT_TERMINAL_FONT_SIZE = 15;
+export const EDITOR_FONT_SIZE_MIN = 10;
+export const EDITOR_FONT_SIZE_MAX = 24;
+export const DEFAULT_EDITOR_FONT_SIZE = 14;
+
+export function clampFontSize(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+export function clampTerminalFontSize(value: number): number {
+  return clampFontSize(value, TERMINAL_FONT_SIZE_MIN, TERMINAL_FONT_SIZE_MAX);
+}
+
+export function clampEditorFontSize(value: number): number {
+  return clampFontSize(value, EDITOR_FONT_SIZE_MIN, EDITOR_FONT_SIZE_MAX);
+}
+
 export interface AppConfig {
   terminalFontSize: number;
+  editorFontSize: number;
   shortcuts: Shortcuts;
   ai: AiConfig;
 }
@@ -16,6 +36,7 @@ interface ConfigState {
   loading: boolean;
   loadConfig: () => Promise<void>;
   updateConfig: (updates: Partial<AppConfig>) => Promise<void>;
+  setConfig: (updates: Partial<AppConfig>) => void;
 }
 
 const DEFAULT_SHORTCUTS: Shortcuts = {
@@ -34,7 +55,8 @@ const DEFAULT_AI: AiConfig = {
 };
 
 const DEFAULT_CONFIG: AppConfig = {
-  terminalFontSize: 15,
+  terminalFontSize: DEFAULT_TERMINAL_FONT_SIZE,
+  editorFontSize: DEFAULT_EDITOR_FONT_SIZE,
   shortcuts: DEFAULT_SHORTCUTS,
   ai: DEFAULT_AI,
 };
@@ -42,6 +64,21 @@ const DEFAULT_CONFIG: AppConfig = {
 export const useConfigStore = create<ConfigState>((set, get) => ({
   config: DEFAULT_CONFIG,
   loading: false,
+
+  setConfig: (updates: Partial<AppConfig>) => {
+    set((state) => ({
+      config: {
+        ...state.config,
+        ...updates,
+        terminalFontSize: updates.terminalFontSize === undefined
+          ? state.config.terminalFontSize
+          : clampTerminalFontSize(updates.terminalFontSize),
+        editorFontSize: updates.editorFontSize === undefined
+          ? state.config.editorFontSize
+          : clampEditorFontSize(updates.editorFontSize),
+      },
+    }));
+  },
 
   loadConfig: async () => {
     set({ loading: true });
@@ -68,6 +105,12 @@ export const useConfigStore = create<ConfigState>((set, get) => ({
     const updated = {
       ...current,
       ...updates,
+      terminalFontSize: updates.terminalFontSize === undefined
+        ? current.terminalFontSize
+        : clampTerminalFontSize(updates.terminalFontSize),
+      editorFontSize: updates.editorFontSize === undefined
+        ? current.editorFontSize
+        : clampEditorFontSize(updates.editorFontSize),
       shortcuts: updates.shortcuts ? { ...current.shortcuts, ...updates.shortcuts } : current.shortcuts,
       ai: updates.ai ? { ...current.ai, ...updates.ai } : current.ai,
     };

@@ -219,6 +219,7 @@ export interface AiConfig {
 
 export interface AppConfig {
   terminalFontSize: number;
+  editorFontSize: number;
   shortcuts: Shortcuts;
   ai: AiConfig;
 }
